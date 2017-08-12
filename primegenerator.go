@@ -1,3 +1,4 @@
+// Main package for primegenerator. Generates primes.
 package main
 
 import (
@@ -14,14 +15,17 @@ var (
 	count = get_total_count()
 )
 
+// format_filename formats inputted filename to create a proper file path.
 func format_filename(filename string) string {
 	return base + filename + ".txt"
 }
 
+// check_prime checks whether number is a prime.
 func check_prime(number *big.Int) bool {
 	return number.ProbablyPrime(1)
 }
 
+// display_prime_pretty displays successful prime generations nicely.
 func display_prime_pretty(number *big.Int, start time.Time) {
 	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[4;30;42mSuccess\x1b[0m\t%s\t\x1b[1;37;37m#%d\x1b[0m\n",
 		number,
@@ -30,6 +34,7 @@ func display_prime_pretty(number *big.Int, start time.Time) {
 	)
 }
 
+// display_fail_pretty displays failed prime generations nicely.
 func display_fail_pretty(number *big.Int, start time.Time) {
 	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[2;1;41mFail\x1b[0m\t%s\t\x1b[1;37;37m#%d\x1b[0m\n",
 		number,
@@ -38,6 +43,7 @@ func display_fail_pretty(number *big.Int, start time.Time) {
 	)
 }
 
+// get_total_count retrieves the total prime count from previous runs.
 func get_total_count() *big.Int {
 	total_count := big.NewInt(0)
 
@@ -61,6 +67,8 @@ func get_total_count() *big.Int {
 	return total_count
 }
 
+// get_last_prime() searches for last generated prime
+// in all prime storage files.
 func get_last_prime() *big.Int {
 	latest_file := open_latest_file(os.O_RDONLY, 0666)
 	defer latest_file.Close()
@@ -78,6 +86,8 @@ func get_last_prime() *big.Int {
 	return big.NewInt(int64(last_prime_as_int))
 }
 
+// create_directory creates the directory.txt file as defined
+// in settings.go
 func create_directory() {
 	_, err := os.Create(directory)
 	if err != nil {
@@ -85,6 +95,8 @@ func create_directory() {
 	}
 }
 
+// open_directory returns an open os.File of the directory.txt
+// as defined in settings.go
 func open_directory(flag int, perm os.FileMode) *os.File {
 	open_directory, err := os.OpenFile(directory, flag, perm)
 	if err != nil {
@@ -98,6 +110,7 @@ func open_directory(flag int, perm os.FileMode) *os.File {
 	return open_directory
 }
 
+// open_latest_file returns an open os.File of the latest written to file
 func open_latest_file(flag int, perm os.FileMode) *os.File {
 	directory := open_directory(os.O_RDONLY, 0600)
 	defer directory.Close()
@@ -125,11 +138,14 @@ func open_latest_file(flag int, perm os.FileMode) *os.File {
 	return file
 }
 
+// get_next_file_name generates the name of the possible file
 func get_next_file_name() string {
-	next_file := fmt.Sprintf("%s-%s", count, big.NewInt(0).Add(count, big.NewInt(1000000)))
+	next_file := fmt.Sprintf("%s-%s", count, big.NewInt(0).Add(count, big.NewInt(max_filesize)))
 	return next_file
 }
 
+// create_next_file creates the next file to be written to
+// and writes its name to the directory
 func create_next_file() {
 	directory := open_directory(os.O_APPEND|os.O_WRONLY, 0600)
 	defer directory.Close()
@@ -144,18 +160,19 @@ func create_next_file() {
 	}
 }
 
+// new_file_needed returns a boolean of whether a new file is
+// required or not based on variables in settings.go
 func new_file_needed() bool {
 	divisible_by_max_filesize := big.NewInt(0).Mod(count, big.NewInt(max_filesize)).Int64() == 0
-	fmt.Println(divisible_by_max_filesize)
 	return divisible_by_max_filesize
 }
 
+// write_prime writes a number with an appropriate newline
+// to the current working file
 func write_prime(number *big.Int) {
 	writing := fmt.Sprintf("\n%d", number)
 	if new_file_needed() == true {
 		create_next_file()
-		fmt.Println("NEW FILE")
-		os.Exit(1)
 	}
 	file := open_latest_file(os.O_APPEND|os.O_WRONLY, 0600)
 	defer file.Close()
@@ -165,7 +182,6 @@ func write_prime(number *big.Int) {
 func main() {
 	fmt.Println("Welcome to the Prime Number Generator.")
 	last_prime := get_last_prime()
-	// create_next_file()
 	for i := last_prime; true; i.Add(i, big.NewInt(2)) {
 		start := time.Now()
 		if check_prime(i) {
