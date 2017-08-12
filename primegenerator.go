@@ -11,8 +11,7 @@ import (
 )
 
 var (
-	count       = get_total_count()
-	latest_file = open_latest_file(os.O_RDWR, 0666)
+	count = get_total_count()
 )
 
 func format_filename(filename string) string {
@@ -123,7 +122,6 @@ func open_latest_file(flag int, perm os.FileMode) *os.File {
 		}
 		return created_next_file
 	}
-	fmt.Println("OPENED: ", latest_file)
 	return file
 }
 
@@ -147,33 +145,35 @@ func create_next_file() {
 }
 
 func new_file_needed() bool {
-	if big.NewInt(0).Mod(count, big.NewInt(1000000)).Int64() == 0 {
-		return true
-	}
-	return false
+	divisible_by_max_filesize := big.NewInt(0).Mod(count, big.NewInt(max_filesize)).Int64() == 0
+	fmt.Println(divisible_by_max_filesize)
+	return divisible_by_max_filesize
 }
 
 func write_prime(number *big.Int) {
 	writing := fmt.Sprintf("\n%d", number)
-	latest_file = open_latest_file(os.O_APPEND|os.O_WRONLY, 0600)
-	defer latest_file.Close()
-	latest_file.WriteString(writing)
+	if new_file_needed() == true {
+		create_next_file()
+		fmt.Println("NEW FILE")
+		os.Exit(1)
+	}
+	file := open_latest_file(os.O_APPEND|os.O_WRONLY, 0600)
+	defer file.Close()
+	file.WriteString(writing)
 }
 
 func main() {
 	fmt.Println("Welcome to the Prime Number Generator.")
-	// last_prime := get_last_prime()
-	fmt.Println(new_file_needed())
+	last_prime := get_last_prime()
 	// create_next_file()
-	/*for i := last_prime; true; i.Add(i, big.NewInt(2)) {
+	for i := last_prime; true; i.Add(i, big.NewInt(2)) {
 		start := time.Now()
 		if check_prime(i) {
 			count.Add(count, big.NewInt(1))
 			display_prime_pretty(i, start)
 			write_prime(i)
-		} else {
+		} else if show_fails == true {
 			display_fail_pretty(i, start)
 		}
 	}
-	*/
 }
