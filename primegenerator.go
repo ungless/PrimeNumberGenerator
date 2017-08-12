@@ -182,17 +182,18 @@ func write_prime(number *big.Int) {
 func main() {
 	fmt.Println("Welcome to the Prime Number Generator.")
 	primes := make(chan bool)
+	//writers := make(chan *big.Int)
 	last_prime := get_last_prime()
 	for i := last_prime; true; i.Add(i, big.NewInt(2)) {
 		start := time.Now()
 		go check_prime(i, primes)
 		is_prime := <-primes
-		if is_prime {
+		if is_prime == true {
 			count.Add(count, big.NewInt(1))
-			display_prime_pretty(i, start)
+			go display_prime_pretty(i, start)
 			write_prime(i)
 		} else if show_fails == true {
-			display_fail_pretty(i, start)
+			go display_fail_pretty(i, start)
 		}
 	}
 }
