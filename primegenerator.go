@@ -21,8 +21,8 @@ func format_filename(filename string) string {
 }
 
 // check_prime checks whether number is a prime.
-func check_prime(number *big.Int) bool {
-	return number.ProbablyPrime(1)
+func check_prime(number *big.Int, primes chan bool) {
+	primes <- number.ProbablyPrime(1)
 }
 
 // display_prime_pretty displays successful prime generations nicely.
@@ -181,10 +181,13 @@ func write_prime(number *big.Int) {
 
 func main() {
 	fmt.Println("Welcome to the Prime Number Generator.")
+	primes := make(chan bool)
 	last_prime := get_last_prime()
 	for i := last_prime; true; i.Add(i, big.NewInt(2)) {
 		start := time.Now()
-		if check_prime(i) {
+		go check_prime(i, primes)
+		is_prime := <-primes
+		if is_prime {
 			count.Add(count, big.NewInt(1))
 			display_prime_pretty(i, start)
 			write_prime(i)
