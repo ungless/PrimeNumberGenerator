@@ -8,12 +8,19 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"sync/atomic"
 	"time"
 )
 
 var (
-	count = get_total_count()
+	count uint64 = 0
 )
+
+type prime struct {
+	count     uint64
+	value     *big.Int
+	timeTaken time.Duration
+}
 
 // format_filename formats inputted filename to create a proper file path.
 func format_filename(filename string) string {
@@ -21,24 +28,24 @@ func format_filename(filename string) string {
 }
 
 // check_prime checks whether number is a prime.
-func check_prime(number *big.Int, primes chan bool) {
-	primes <- number.ProbablyPrime(1)
+func check_prime(number *big.Int) bool {
+	return number.ProbablyPrime(1)
 }
 
 // display_prime_pretty displays successful prime generations nicely.
-func display_prime_pretty(number *big.Int, start time.Time) {
+func display_prime_pretty(number *big.Int, timeTaken time.Duration) {
 	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[4;30;42mSuccess\x1b[0m\t%s\t\x1b[1;37;37m#%d\x1b[0m\n",
 		number,
-		time.Now().Sub(start),
+		timeTaken,
 		count,
 	)
 }
 
 // display_fail_pretty displays failed prime generations nicely.
-func display_fail_pretty(number *big.Int, start time.Time) {
+func display_fail_pretty(number *big.Int, timeTaken time.Duration) {
 	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[2;1;41mFail\x1b[0m\t%s\t\x1b[1;37;37m#%d\x1b[0m\n",
 		number,
-		time.Now().Sub(start),
+		timeTaken,
 		count,
 	)
 }
@@ -140,7 +147,7 @@ func open_latest_file(flag int, perm os.FileMode) *os.File {
 
 // get_next_file_name generates the name of the possible file
 func get_next_file_name() string {
-	next_file := fmt.Sprintf("%s-%s", count, big.NewInt(0).Add(count, big.NewInt(max_filesize)))
+	next_file := fmt.Sprintf("%s-%s", count, count + max_filesize)
 	return next_file
 }
 
@@ -160,20 +167,11 @@ func create_next_file() {
 	}
 }
 
-// new_file_needed returns a boolean of whether a new file is
-// required or not based on variables in settings.go
-func new_file_needed() bool {
-	divisible_by_max_filesize := big.NewInt(0).Mod(count, big.NewInt(max_filesize)).Int64() == 0
-	return divisible_by_max_filesize
-}
-
 // write_prime writes a number with an appropriate newline
 // to the current working file
 func write_prime(number *big.Int) {
 	writing := fmt.Sprintf("\n%d", number)
-	if new_file_needed() == true {
-		create_next_file()
-	}
+
 	file := open_latest_file(os.O_APPEND|os.O_WRONLY, 0600)
 	defer file.Close()
 	file.WriteString(writing)
@@ -181,19 +179,52 @@ func write_prime(number *big.Int) {
 
 func main() {
 	fmt.Println("Welcome to the Prime Number Generator.")
-	primes := make(chan bool)
-	//writers := make(chan *big.Int)
-	last_prime := get_last_prime()
-	for i := last_prime; true; i.Add(i, big.NewInt(2)) {
-		start := time.Now()
-		go check_prime(i, primes)
-		is_prime := <-primes
-		if is_prime == true {
-			count.Add(count, big.NewInt(1))
-			go display_prime_pretty(i, start)
-			write_prime(i)
-		} else if show_fails == true {
-			go display_fail_pretty(i, start)
+	// last_prime := get_last_prime()
+	last_prime := big.NewInt(1)
+	numbersToCheck := make(chan *big.Int, 100)
+	validPrimes := make(chan prime, 100)
+	invalidPrimes := make(chan prime, 100)
+	var primeBuffer []*big.Int
+	
+	go func() {
+		for i := last_prime; true; i.Add(i, big.NewInt(2)) {
+			numberToTest := big.NewInt(0).Set(i)
+			numbersToCheck <- numberToTest
 		}
+	}()
+
+	go func() {
+		for elem := range validPrimes {
+			primeBuffer = append(primeBuffer, elem.value)
+			display_prime_pretty(elem.value, elem.timeTaken)
+		}
+	}()
+
+	go func() {
+		for elem := range invalidPrimes {
+			if show_fails == true {
+				display_fail_pretty(elem.value, elem.timeTaken)
+			}
+		}
+	}()
+
+	for i := range numbersToCheck {
+		go func(i *big.Int) {
+			start := time.Now()
+			is_prime := check_prime(i)
+			if is_prime == true {
+				atomic.AddUint64(&count, 1)
+				validPrimes <- prime{
+					timeTaken: time.Now().Sub(start),
+					value:     i,
+					count:     count,
+				}
+			} else {
+				invalidPrimes <- prime{
+					timeTaken: time.Now().Sub(start),
+					value:     i,
+				}
+			}
+		}(i)
 	}
 }
