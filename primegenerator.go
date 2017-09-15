@@ -125,11 +125,10 @@ func open_directory(flag int, perm os.FileMode) *os.File {
 	return open_directory
 }
 
-// open_latest_file returns an open os.File of the latest written to file
-func open_latest_file(flag int, perm os.FileMode) *os.File {
+func getLastFileWritten() string {
 	directory := open_directory(os.O_RDONLY, 0600)
 	defer directory.Close()
-
+	
 	var latest_file string
 	scanner := bufio.NewScanner(directory)
 	for scanner.Scan() {
@@ -139,12 +138,24 @@ func open_latest_file(flag int, perm os.FileMode) *os.File {
 		}
 		latest_file = scanner.Text()
 	}
+	return latest_file
+}
 
-	file, err := os.OpenFile(format_filename(latest_file), flag, perm)
-	if err != nil {
-		create_next_file()
-		next_filename := get_next_file_name()
-		created_next_file, err := os.OpenFile(format_filename(next_filename), flag, perm)
+func isNewFileNeeded(id uint64) bool {
+	divisibleByMaxFilesize := big.NewInt(0).Mod(big.NewInt(int64(id)), big.NewInt(max_filesize)).Int64() == 0 
+	return divisibleByMaxFilesize
+}
+
+// open_latest_file returns an open os.File of the latest written to file
+func open_latest_file(flag int, perm os.FileMode) *os.File {
+	lastFileWritten := getLastFileWritten()
+	file, err := os.OpenFile(format_filename(lastFileWritten), flag, perm)
+	if err != nil || isNewFileNeeded(id) {
+		fmt.Println("new file")
+
+		newFileName := getNewFileName(id)
+		createNextFile(newFileName)
+		created_next_file, err := os.OpenFile(format_filename(newFileName), flag, perm)
 		if err != nil {
 			panic(err)
 		}
@@ -154,22 +165,21 @@ func open_latest_file(flag int, perm os.FileMode) *os.File {
 }
 
 // get_next_file_name generates the name of the possible file
-func get_next_file_name() string {
+func getNewFileName(id uint64) string {
 	next_file := fmt.Sprintf("%d-%d", id, id+max_filesize)
 	return next_file
 }
 
 // create_next_file creates the next file to be written to
 // and writes its name to the directory
-func create_next_file() {
+func createNextFile(newFileName string) {
 	directory := open_directory(os.O_APPEND|os.O_WRONLY, 0600)
 	defer directory.Close()
 
-	next_file_name := get_next_file_name()
-	directory.WriteString(next_file_name + "\n")
-	fmt.Println("Creating next file.", next_file_name)
+	directory.WriteString(newFileName + "\n")
+	fmt.Println("Creating next file.", newFileName)
 
-	_, err := os.Create(format_filename(next_file_name))
+	_, err := os.Create(format_filename(newFileName))
 	if err != nil {
 		panic(err)
 	}
@@ -183,7 +193,7 @@ func ConvertPrimesToWritableFormat(buffer []*big.Int) string {
 	return formattedBuffer.String()
 }
 
-func WriteToFile(buffer bigIntSlice) {
+func FlushBufferToFile(buffer bigIntSlice) {
 	mu.Lock()
 	defer mu.Unlock()
 	fmt.Println("Writing buffer....")
@@ -217,10 +227,10 @@ func main() {
 	go func() {
 		for elem := range validPrimes {
 			primeBuffer = append(primeBuffer, elem.value)
-			if len(primeBuffer) == 10 {
-				WriteToFile(primeBuffer)
+			if len(primeBuffer) == maxBufferSize {
+				FlushBufferToFile(primeBuffer)
 				primeBuffer = nil
-				os.Exit(1)
+				// os.Exit(1)
 			}
 			display_prime_pretty(elem.value, elem.timeTaken)
 		}
