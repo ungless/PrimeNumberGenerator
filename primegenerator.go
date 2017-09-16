@@ -2,6 +2,7 @@
 package main
 
 import (
+
 	"bufio"
 	"bytes"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 
 var (
 	globalCount        = big.NewInt(0)
-	id          uint64 = 0
+	id          uint64 = uint64(Round(float64(getMaximumId()), maxBufferSize))
 	mu          sync.Mutex
 )
 
@@ -32,26 +33,26 @@ func (s bigIntSlice) Len() int           { return len(s) }
 func (s bigIntSlice) Less(i, j int) bool { return s[i].Cmp(s[j]) < 0 }
 func (s bigIntSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
-// format_filename formats inputted filename to create a proper file path.
-func format_filename(filename string) string {
+// formatFilePath formats inputted filename to create a proper file path.
+func formatFilePath(filename string) string {
 	return base + filename + ".txt"
 }
 
-// check_prime checks whether number is a prime.
-func check_prime(number *big.Int) bool {
+// checkPrimality checks whether number is a prime.
+func checkPrimality(number *big.Int) bool {
 	return number.ProbablyPrime(1)
 }
 
-// display_prime_pretty displays successful prime generations nicely.
-func display_prime_pretty(number *big.Int, timeTaken time.Duration) {
+// displayPrimePretty displays successful prime generations nicely.
+func displayPrimePretty(number *big.Int, timeTaken time.Duration) {
 	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[4;30;42mSuccess\x1b[0m\t%s\x1b[0m\n",
 		number,
 		timeTaken,
 	)
 }
 
-// display_fail_pretty displays failed prime generations nicely.
-func display_fail_pretty(number *big.Int, timeTaken time.Duration) {
+// displayFailPretty displays failed prime generations nicely.
+func displayFailPretty(number *big.Int, timeTaken time.Duration) {
 	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[2;1;41mFail\x1b[0m\t%s\t\x1b\n",
 		number,
 		timeTaken,
@@ -59,127 +60,132 @@ func display_fail_pretty(number *big.Int, timeTaken time.Duration) {
 }
 
 // get_total_count retrieves the total prime count from previous runs.
-func get_total_count() *big.Int {
-	total_count := big.NewInt(0)
+func getMaximumId() uint64 {
+	var maximumId uint64
 
-	open_directory := open_directory(os.O_RDONLY, 0600)
-	defer open_directory.Close()
-	scanner := bufio.NewScanner(open_directory)
+	openDirectory := openDirectory(os.O_RDONLY, 0600)
+	defer openDirectory.Close()
+	scanner := bufio.NewScanner(openDirectory)
 
 	for scanner.Scan() {
 		filename := scanner.Text()
-		file, err := os.Open(format_filename(filename))
+		file, err := os.Open(formatFilePath(filename))
 		if err != nil {
 			break
 		}
 
-		file_scanner := bufio.NewScanner(file)
-		for file_scanner.Scan() {
-			total_count.Add(total_count, big.NewInt(1))
+		fileScanner := bufio.NewScanner(file)
+		for fileScanner.Scan() {
+			maximumId += 1
 		}
 		file.Close()
 	}
-	return total_count
+	fmt.Println(maximumId)
+	return maximumId
 }
 
 // get_last_prime() searches for last generated prime
 // in all prime storage files.
-func get_last_prime() *big.Int {
-	latest_file := open_latest_file(os.O_RDONLY, 0666)
-	defer latest_file.Close()
+func getLastPrime() *big.Int {
+	latestFile := openLatestFile(os.O_RDONLY, 0666)
+	defer latestFile.Close()
 
-	var last_prime string
-	scanner := bufio.NewScanner(latest_file)
+	var lastPrimeGenerated string
+	scanner := bufio.NewScanner(latestFile)
 	for scanner.Scan() {
-		last_prime = scanner.Text()
+		lastPrimeGenerated = scanner.Text()
 	}
 
-	last_prime_as_int, err := strconv.Atoi(last_prime)
+	lastPrimeAsInt, err := strconv.Atoi(lastPrimeGenerated)
 	if err != nil {
-		last_prime_as_int = starting_prime
+		lastPrimeAsInt = startingPrime
 	}
-	return big.NewInt(int64(last_prime_as_int))
+	fmt.Println(lastPrimeAsInt)
+	return big.NewInt(int64(lastPrimeAsInt))
 }
 
-// create_directory creates the directory.txt file as defined
+func Round(x, unit float64) float64 {
+    return float64(int64(x/unit+0.5)) * unit
+}
+
+// createDirectory creates the directory.txt file as defined
 // in settings.go
-func create_directory() {
+func createDirectory() {
 	_, err := os.Create(directory)
 	if err != nil {
 		panic(err)
 	}
 }
 
-// open_directory returns an open os.File of the directory.txt
+// openDirectory returns an open os.File of the directory.txt
 // as defined in settings.go
-func open_directory(flag int, perm os.FileMode) *os.File {
-	open_directory, err := os.OpenFile(directory, flag, perm)
+func openDirectory(flag int, perm os.FileMode) *os.File {
+	openDirectory, err := os.OpenFile(directory, flag, perm)
 	if err != nil {
-		create_directory()
-		opened_created_directory, err := os.OpenFile(directory, flag, perm)
+		createDirectory()
+		openedCreatedDirectory, err := os.OpenFile(directory, flag, perm)
 		if err != nil {
 			panic(err)
 		}
-		return opened_created_directory
+		return openedCreatedDirectory
 	}
-	return open_directory
+	return openDirectory
 }
 
 func getLastFileWritten() string {
-	directory := open_directory(os.O_RDONLY, 0600)
+	directory := openDirectory(os.O_RDONLY, 0600)
 	defer directory.Close()
-	
-	var latest_file string
+
+	var latestFile string
 	scanner := bufio.NewScanner(directory)
 	for scanner.Scan() {
-		scanned_text := scanner.Text()
-		if scanned_text == "" {
+		scannedText := scanner.Text()
+		if scannedText == "" {
 			break
 		}
-		latest_file = scanner.Text()
+		latestFile = scanner.Text()
 	}
-	return latest_file
+	return latestFile
 }
 
 func isNewFileNeeded(id uint64) bool {
-	divisibleByMaxFilesize := big.NewInt(0).Mod(big.NewInt(int64(id)), big.NewInt(max_filesize)).Int64() == 0 
+	divisibleByMaxFilesize := big.NewInt(0).Mod(big.NewInt(int64(id)), big.NewInt(maxFilesize)).Int64() == 0
 	return divisibleByMaxFilesize
 }
 
-// open_latest_file returns an open os.File of the latest written to file
-func open_latest_file(flag int, perm os.FileMode) *os.File {
+// openLatestFile returns an open os.File of the latest written to file
+func openLatestFile(flag int, perm os.FileMode) *os.File {
 	lastFileWritten := getLastFileWritten()
-	file, err := os.OpenFile(format_filename(lastFileWritten), flag, perm)
-	if err != nil || isNewFileNeeded(id) {
-		fmt.Println("new file")
-
+	file, err := os.OpenFile(formatFilePath(lastFileWritten), flag, perm)
+	newFileNeeded := isNewFileNeeded(id)
+	if err != nil || newFileNeeded {
 		newFileName := getNewFileName(id)
 		createNextFile(newFileName)
-		created_next_file, err := os.OpenFile(format_filename(newFileName), flag, perm)
+		createdNextFile, err := os.OpenFile(formatFilePath(newFileName), flag, perm)
 		if err != nil {
 			panic(err)
 		}
-		return created_next_file
+		return createdNextFile
 	}
 	return file
 }
 
 // get_next_file_name generates the name of the possible file
 func getNewFileName(id uint64) string {
-	next_file := fmt.Sprintf("%d-%d", id, id+max_filesize)
-	return next_file
+	nextFile := fmt.Sprintf("%d-%d", id, id+maxFilesize)
+	return nextFile
 }
 
 // create_next_file creates the next file to be written to
 // and writes its name to the directory
 func createNextFile(newFileName string) {
-	directory := open_directory(os.O_APPEND|os.O_WRONLY, 0600)
+	directory := openDirectory(os.O_APPEND|os.O_WRONLY, 0600)
 	defer directory.Close()
 
 	directory.WriteString(newFileName + "\n")
 	fmt.Println("Creating next file.", newFileName)
 
-	_, err := os.Create(format_filename(newFileName))
+	_, err := os.Create(formatFilePath(newFileName))
 	if err != nil {
 		panic(err)
 	}
@@ -199,10 +205,13 @@ func FlushBufferToFile(buffer bigIntSlice) {
 	fmt.Println("Writing buffer....")
 	sort.Sort(buffer)
 	fmt.Println(buffer)
-
-	file := open_latest_file(os.O_APPEND|os.O_WRONLY, 0600)
+	atomic.AddUint64(&id, maxBufferSize)
+	fmt.Println(id)
+	
+	file := openLatestFile(os.O_APPEND|os.O_WRONLY, 0600)
 	defer file.Close()
 	readableBuffer := ConvertPrimesToWritableFormat(buffer)
+
 	
 	file.WriteString(readableBuffer)
 	fmt.Println("Finished writing buffer.")
@@ -210,15 +219,15 @@ func FlushBufferToFile(buffer bigIntSlice) {
 
 func main() {
 	fmt.Println("Welcome to the Prime Number Generator.")
-	// last_prime := get_last_prime()
-	last_prime := big.NewInt(1)
+	lastPrime := getLastPrime()
+	fmt.Println(lastPrime)
 	numbersToCheck := make(chan *big.Int, 100)
 	validPrimes := make(chan prime, 100)
 	invalidPrimes := make(chan prime, 100)
 	var primeBuffer bigIntSlice
 
 	go func() {
-		for i := last_prime; true; i.Add(i, big.NewInt(2)) {
+		for i := lastPrime; true; i.Add(i, big.NewInt(2)) {
 			numberToTest := big.NewInt(0).Set(i)
 			numbersToCheck <- numberToTest
 		}
@@ -232,14 +241,14 @@ func main() {
 				primeBuffer = nil
 				// os.Exit(1)
 			}
-			display_prime_pretty(elem.value, elem.timeTaken)
+			displayPrimePretty(elem.value, elem.timeTaken)
 		}
 	}()
 
 	go func() {
 		for elem := range invalidPrimes {
-			if show_fails == true {
-				display_fail_pretty(elem.value, elem.timeTaken)
+			if showFails == true {
+				displayFailPretty(elem.value, elem.timeTaken)
 			}
 		}
 	}()
@@ -247,9 +256,8 @@ func main() {
 	for i := range numbersToCheck {
 		go func(i *big.Int) {
 			start := time.Now()
-			is_prime := check_prime(i)
-			if is_prime == true {
-				atomic.AddUint64(&id, 1)
+			isPrime := checkPrimality(i)
+			if isPrime == true {
 				validPrimes <- prime{
 					timeTaken: time.Now().Sub(start),
 					value:     i,
