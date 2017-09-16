@@ -59,7 +59,7 @@ func displayFailPretty(number *big.Int, timeTaken time.Duration) {
 	)
 }
 
-// get_total_count retrieves the total prime count from previous runs.
+// getMaximumId retrieves the total prime count from previous runs.
 func getMaximumId() uint64 {
 	var maximumId uint64
 
@@ -84,7 +84,7 @@ func getMaximumId() uint64 {
 	return maximumId
 }
 
-// get_last_prime() searches for last generated prime
+// getLastPrime() searches for last generated prime
 // in all prime storage files.
 func getLastPrime() *big.Int {
 	latestFile := openLatestFile(os.O_RDONLY, 0666)
@@ -104,6 +104,7 @@ func getLastPrime() *big.Int {
 	return big.NewInt(int64(lastPrimeAsInt))
 }
 
+// Round() is used to round numbers to the nearest x
 func Round(x, unit float64) float64 {
     return float64(int64(x/unit+0.5)) * unit
 }
@@ -132,6 +133,8 @@ func openDirectory(flag int, perm os.FileMode) *os.File {
 	return openDirectory
 }
 
+// getLastFileWritten() searches the directory for the final line,
+// and returns it.
 func getLastFileWritten() string {
 	directory := openDirectory(os.O_RDONLY, 0600)
 	defer directory.Close()
@@ -148,12 +151,14 @@ func getLastFileWritten() string {
 	return latestFile
 }
 
+// isNewFileNeeded() checks wether a new file is needed by asserting that
+// the id is divisible by maxFilesize - as defined in settings.go
 func isNewFileNeeded(id uint64) bool {
 	divisibleByMaxFilesize := big.NewInt(0).Mod(big.NewInt(int64(id)), big.NewInt(maxFilesize)).Int64() == 0
 	return divisibleByMaxFilesize
 }
 
-// openLatestFile returns an open os.File of the latest written to file
+// openLatestFile() returns an open os.File of the latest written to file
 func openLatestFile(flag int, perm os.FileMode) *os.File {
 	lastFileWritten := getLastFileWritten()
 	file, err := os.OpenFile(formatFilePath(lastFileWritten), flag, perm)
@@ -170,13 +175,13 @@ func openLatestFile(flag int, perm os.FileMode) *os.File {
 	return file
 }
 
-// get_next_file_name generates the name of the possible file
+// getNextFileName() generates the name of the possible file
 func getNewFileName(id uint64) string {
 	nextFile := fmt.Sprintf("%d-%d", id, id+maxFilesize)
 	return nextFile
 }
 
-// create_next_file creates the next file to be written to
+// createNextFile() creates the next file to be written to
 // and writes its name to the directory
 func createNextFile(newFileName string) {
 	directory := openDirectory(os.O_APPEND|os.O_WRONLY, 0600)
@@ -191,6 +196,8 @@ func createNextFile(newFileName string) {
 	}
 }
 
+// ConvertPrimesToWritableFormat() takes a buffer of primes and converts them to a string
+// with each prime separated by a newline
 func ConvertPrimesToWritableFormat(buffer []*big.Int) string {
 	var formattedBuffer bytes.Buffer
 	for _, prime := range buffer {
@@ -199,6 +206,7 @@ func ConvertPrimesToWritableFormat(buffer []*big.Int) string {
 	return formattedBuffer.String()
 }
 
+// FlushBufferToFile() takes a buffer of primes and flushes them to the latest file
 func FlushBufferToFile(buffer bigIntSlice) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -212,7 +220,6 @@ func FlushBufferToFile(buffer bigIntSlice) {
 	defer file.Close()
 	readableBuffer := ConvertPrimesToWritableFormat(buffer)
 
-	
 	file.WriteString(readableBuffer)
 	fmt.Println("Finished writing buffer.")
 }
@@ -220,7 +227,6 @@ func FlushBufferToFile(buffer bigIntSlice) {
 func main() {
 	fmt.Println("Welcome to the Prime Number Generator.")
 	lastPrime := getLastPrime()
-	fmt.Println(lastPrime)
 	numbersToCheck := make(chan *big.Int, 100)
 	validPrimes := make(chan prime, 100)
 	invalidPrimes := make(chan prime, 100)
