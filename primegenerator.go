@@ -119,7 +119,7 @@ func createDirectory() {
 }
 
 // openDirectory returns an open os.File of the directory.txt
-// as defined in settings.go
+// as defined in settings.nnngo
 func openDirectory(flag int, perm os.FileMode) *os.File {
 	openDirectory, err := os.OpenFile(directory, flag, perm)
 	if err != nil {
@@ -196,9 +196,9 @@ func createNextFile(newFileName string) {
 	}
 }
 
-// ConvertPrimesToWritableFormat() takes a buffer of primes and converts them to a string
+// convertPrimesToWritableFormat() takes a buffer of primes and converts them to a string
 // with each prime separated by a newline
-func ConvertPrimesToWritableFormat(buffer []*big.Int) string {
+func convertPrimesToWritableFormat(buffer []*big.Int) string {
 	var formattedBuffer bytes.Buffer
 	for _, prime := range buffer {
 		formattedBuffer.WriteString(prime.String() + "\n")
@@ -218,7 +218,7 @@ func FlushBufferToFile(buffer bigIntSlice) {
 	
 	file := openLatestFile(os.O_APPEND|os.O_WRONLY, 0600)
 	defer file.Close()
-	readableBuffer := ConvertPrimesToWritableFormat(buffer)
+	readableBuffer := convertPrimesToWritableFormat(buffer)
 
 	file.WriteString(readableBuffer)
 	fmt.Println("Finished writing buffer.")
