@@ -58,6 +58,7 @@ func displayFailPretty(number *big.Int, timeTaken time.Duration) {
 	)
 }
 
+// showHelp shows help to the user.
 func showHelp() {
 	fmt.Println("One must specify at least one command to PrimeNumberGenerator.\nHere is the list of commands:")
 	fmt.Println("\ncount - Displays the total number of generated primes.")
@@ -170,7 +171,6 @@ func main() {
 					if len(primeBuffer) == maxBufferSize {
 						FlushBufferToFile(primeBuffer)
 						primeBuffer = nil
-						// os.Exit(1)
 					}
 					displayPrimePretty(elem.value, elem.timeTaken)
 				}
