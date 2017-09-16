@@ -58,6 +58,13 @@ func displayFailPretty(number *big.Int, timeTaken time.Duration) {
 	)
 }
 
+func showHelp() {
+	fmt.Println("One must specify at least one command to PrimeNumberGenerator.\nHere is the list of commands:")
+	fmt.Println("\ncount - Displays the total number of generated primes.")
+	fmt.Println("\nrun - Runs the program indefinetly.")
+	fmt.Println("\nhelp - Displays this screen. Gives help.")
+}
+
 // GetMaximumId retrieves the total prime count from previous runs.
 func GetMaximumId() uint64 {
 	var maximumId uint64
@@ -136,9 +143,9 @@ func FlushBufferToFile(buffer bigIntSlice) {
 }
 
 func main() {
-	fmt.Println("Welcome to the Prime Number Generator.")
 	arguments := os.Args
 	if len(arguments) == 2 {
+		fmt.Println("Welcome to the Prime Number Generator.")
 		switch arguments[1] {
 		case "count":
 			ShowCurrentCount()
@@ -195,7 +202,10 @@ func main() {
 					}
 				}(i)
 			}
-
+		case "help":
+			showHelp()
 		}
+	} else if len(arguments) == 1 {
+		showHelp()
 	}
 }
