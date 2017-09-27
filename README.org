@@ -1,0 +1,43 @@
+#+TITLE: Prime Number Generator / Primes
+
+This is a program that calculates primes concurrently using Go.
+
+* Installation
+
+1. Clone the repository
+
+```
+git clone https://github.com/MaxTheMonster/PrimeNumberGenerator.git
+```
+
+2. Change directory
+
+```
+cd PrimeNumberGenerator
+```
+
+3. Build it
+
+```
+go build -o primegen
+```
+
+4. Move the executable to your bin (as superuser)
+
+```
+# cp primegen /usr/bin/
+```
+
+Now the program can be called from the command line
+
+```
+primegen
+```
+
+* Usage
+
+Refer to the help command for more.
+
+```
+primegen help
+```
