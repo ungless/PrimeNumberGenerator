@@ -6,38 +6,38 @@ This is a program that calculates primes concurrently using Go.
 
 1. Clone the repository
 
-```
+#+BEGIN_SRC bash
 git clone https://github.com/MaxTheMonster/PrimeNumberGenerator.git
-```
+#+END_SRC
 
 2. Change directory
 
-```
+#+BEGIN_SRC bash
 cd PrimeNumberGenerator
-```
+#+END_SRC
 
 3. Build it
 
-```
+#+BEGIN_SRC bash
 go build -o primegen
-```
+#+END_SRC
 
 4. Move the executable to your bin (as superuser)
 
-```
+#+BEGIN_SRC bash
 # cp primegen /usr/bin/
-```
+#+END_SRC
 
 Now the program can be called from the command line
 
-```
+#+BEGIN_SRC bash
 primegen
-```
+#+END_SRC
 
 * Usage
 
 Refer to the help command for more.
 
-```
+#+BEGIN_SRC bash
 primegen help
-```
+#+END_SRC
