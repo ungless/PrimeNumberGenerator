@@ -1,10 +1,14 @@
 package main
 
+var (
+	home      = GetUserHome()
+	base      = home + "/.primes/"
+	directory = base + "directory.txt"
+)
+
 const (
-	base           = "primes/"
-	directory      = base + "directory.txt"
 	startingPrime = 1
 	maxFilesize   = 10000000
-	maxBufferSize  = 200
+	maxBufferSize = 200
 	showFails     = false
 )

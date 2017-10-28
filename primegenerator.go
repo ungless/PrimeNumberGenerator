@@ -131,9 +131,7 @@ func FlushBufferToFile(buffer bigIntSlice) {
 	defer mu.Unlock()
 	fmt.Println("Writing buffer....")
 	sort.Sort(buffer)
-	fmt.Println(buffer)
 	atomic.AddUint64(&id, maxBufferSize)
-	fmt.Println(id)
 
 	file := OpenLatestFile(os.O_APPEND|os.O_WRONLY, 0600)
 	defer file.Close()
@@ -143,6 +141,68 @@ func FlushBufferToFile(buffer bigIntSlice) {
 	fmt.Println("Finished writing buffer.")
 }
 
+// ComputePrimes computes primes concurrently until KeyboardInterrupt
+func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNumber *big.Int) {
+	numbersToCheck := make(chan *big.Int, 100)
+	validPrimes := make(chan prime, 100)
+	invalidPrimes := make(chan prime, 100)
+	var primeBuffer bigIntSlice
+
+	go func() {
+		if toInfinity {
+			for i := lastPrime; true; i.Add(i, big.NewInt(2)) {
+				numberToTest := big.NewInt(0).Set(i)
+				numbersToCheck <- numberToTest
+			}
+		} else {
+			for i := lastPrime; i.Cmp(maxNumber) == -1; i.Add(i, big.NewInt(2)) {
+				numberToTest := big.NewInt(0).Set(i)
+				numbersToCheck <- numberToTest
+			}
+		}
+	}()
+
+	go func() {
+		for elem := range validPrimes {
+			primeBuffer = append(primeBuffer, elem.value)
+			if len(primeBuffer) == maxBufferSize {
+				if writeToFile {
+					FlushBufferToFile(primeBuffer)
+				}
+				primeBuffer = nil
+			}
+			displayPrimePretty(elem.value, elem.timeTaken)
+		}
+	}()
+
+	go func() {
+		for elem := range invalidPrimes {
+			if showFails == true {
+				displayFailPretty(elem.value, elem.timeTaken)
+			}
+		}
+	}()
+
+	for i := range numbersToCheck {
+		go func(i *big.Int) {
+			start := time.Now()
+			isPrime := checkPrimality(i)
+			if isPrime == true {
+				validPrimes <- prime{
+					timeTaken: time.Now().Sub(start),
+					value:     i,
+					id:        id,
+				}
+			} else {
+				invalidPrimes <- prime{
+					timeTaken: time.Now().Sub(start),
+					value:     i,
+				}
+			}
+		}(i)
+	}
+}
+
 func main() {
 	arguments := os.Args
 	if len(arguments) == 2 {
@@ -150,58 +210,8 @@ func main() {
 		switch arguments[1] {
 		case "count":
 			ShowCurrentCount()
-
 		case "run":
-			lastPrime := getLastPrime()
-			numbersToCheck := make(chan *big.Int, 100)
-			validPrimes := make(chan prime, 100)
-			invalidPrimes := make(chan prime, 100)
-			var primeBuffer bigIntSlice
-
-			go func() {
-				for i := lastPrime; true; i.Add(i, big.NewInt(2)) {
-					numberToTest := big.NewInt(0).Set(i)
-					numbersToCheck <- numberToTest
-				}
-			}()
-
-			go func() {
-				for elem := range validPrimes {
-					primeBuffer = append(primeBuffer, elem.value)
-					if len(primeBuffer) == maxBufferSize {
-						FlushBufferToFile(primeBuffer)
-						primeBuffer = nil
-					}
-					displayPrimePretty(elem.value, elem.timeTaken)
-				}
-			}()
-
-			go func() {
-				for elem := range invalidPrimes {
-					if showFails == true {
-						displayFailPretty(elem.value, elem.timeTaken)
-					}
-				}
-			}()
-
-			for i := range numbersToCheck {
-				go func(i *big.Int) {
-					start := time.Now()
-					isPrime := checkPrimality(i)
-					if isPrime == true {
-						validPrimes <- prime{
-							timeTaken: time.Now().Sub(start),
-							value:     i,
-							id:        id,
-						}
-					} else {
-						invalidPrimes <- prime{
-							timeTaken: time.Now().Sub(start),
-							value:     i,
-						}
-					}
-				}(i)
-			}
+			ComputePrimes(getLastPrime(), true, true, big.NewInt(0))
 		case "help":
 			showHelp()
 		}

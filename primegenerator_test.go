@@ -20,17 +20,21 @@ var tests = []test{
 func TestCorrectPrimeNumberOutput(t *testing.T) {
 	for _, test := range tests {
 		value, expected := big.NewInt(test.test), test.expecting
-		is_prime := check_prime(value)
-		if is_prime != expected {
-			t.Errorf("Expected check_prime(%d) to be %t, instead got %t", value, expected, is_prime)
+		isPrime := checkPrimality(value)
+		if isPrime != expected {
+			t.Errorf("Expected check_prime(%d) to be %t, instead got %t", value, expected, isPrime)
 		}
 	}
 }
 
 func TestFormatFilename(t *testing.T) {
-	value, expected := "0-1000000", "primes/0-1000000.txt"
-	formatted_filename := format_filename(value)
-	if formatted_filename != expected {
-		t.Errorf("Expected %s, got %s, with %s.", expected, formatted_filename, value)
+	value, expected := "0-1000000", "/home/max/.primes/0-1000000.txt"
+	formatFilePath := formatFilePath(value)
+	if formatFilePath != expected {
+		t.Errorf("Expected %s, got %s, with %s.", expected, formatFilePath, value)
 	}
+}
+
+func BenchmarkPrimeAssertion(b *testing.B) {
+	ComputePrimes(big.NewInt(1), false, false, big.NewInt(int64(b.N)))
 }

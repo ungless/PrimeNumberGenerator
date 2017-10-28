@@ -1,11 +1,20 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"bufio"
+	"fmt"
 	"math/big"
+	"os"
+	"os/user"
 )
+
+func GetUserHome() string {
+	user, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	return user.HomeDir
+}
 
 // createDirectory creates the directory.txt file as defined
 // in settings.go
@@ -52,7 +61,7 @@ func getLastFileWritten() string {
 // isNewFileNeeded() checks wether a new file is needed by asserting that
 // the id is divisible by maxFilesize - as defined in settings.go
 func isNewFileNeeded(id uint64) bool {
-	modulusIdAndMaxFilesize := big.NewInt(0).Mod(big.NewInt(int64(id)), big.NewInt(maxFilesize)) 
+	modulusIdAndMaxFilesize := big.NewInt(0).Mod(big.NewInt(int64(id)), big.NewInt(maxFilesize))
 	divisibleByMaxFilesize := modulusIdAndMaxFilesize.Int64() == 0
 	return divisibleByMaxFilesize
 }
