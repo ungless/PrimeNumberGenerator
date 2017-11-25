@@ -8,6 +8,7 @@ import (
 	"os/user"
 )
 
+// GetUserHome returns the current user's home directory
 func GetUserHome() string {
 	user, err := user.Current()
 	if err != nil {
@@ -16,17 +17,29 @@ func GetUserHome() string {
 	return user.HomeDir
 }
 
+// createPrimesBase makes the base directory
+func createPrimesBase() {
+	fmt.Println("Mkdir")
+	os.Mkdir(base, os.ModePerm)
+	fmt.Println("Done")
+}
+
 // createDirectory creates the directory.txt file as defined
 // in settings.go
 func createDirectory() {
 	_, err := os.Create(directory)
 	if err != nil {
-		os.Mkdir(base, 0775)
+		createPrimesBase()
+		_, err := os.Create(directory)
+
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
 // OpenDirectory returns an open os.File of the directory.txt
-// as defined in settings.nnngo
+// as defined in settings.go
 func OpenDirectory(flag int, perm os.FileMode) *os.File {
 	openDirectory, err := os.OpenFile(directory, flag, perm)
 	if err != nil {

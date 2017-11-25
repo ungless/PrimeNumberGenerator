@@ -6,9 +6,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"log"
 	"math/big"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -39,7 +41,7 @@ func formatFilePath(filename string) string {
 
 // checkPrimality checks whether number is a prime.
 func checkPrimality(number *big.Int) bool {
-	return number.ProbablyPrime(100)
+	return number.ProbablyPrime(1)
 }
 
 // displayPrimePretty displays successful prime generations nicely.
@@ -52,7 +54,7 @@ func displayPrimePretty(number *big.Int, timeTaken time.Duration) {
 
 // displayFailPretty displays failed prime generations nicely.
 func displayFailPretty(number *big.Int, timeTaken time.Duration) {
-	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[2;1;41mFail\x1b[0m\t%s\t\x1b\n",
+	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[2;1;41mFail\x1b[0m\t%s\t\x1b[0m\n",
 		number,
 		timeTaken,
 	)
@@ -62,7 +64,8 @@ func displayFailPretty(number *big.Int, timeTaken time.Duration) {
 func showHelp() {
 	fmt.Println("\nCOMMANDS")
 	fmt.Println("count \t Displays the total number of generated primes.")
-	fmt.Println("run \t Runs the program indefinetly.")
+	fmt.Println("configure \t Generates a configuration for the program.")
+	fmt.Println("run \t Runs the program indefinitely.")
 	fmt.Println("help \t Displays this screen. Gives help.")
 }
 
@@ -71,7 +74,7 @@ func showProgramDetails() {
 	fmt.Printf("PrimeNumberGenerator %s\n", version)
 	fmt.Println("\nCopyright (C) 2017 by Max Ungless")
 	fmt.Println("This program comes with ABSOLUTELY NO WARRANTY.\nThis is free software, and you are welcome to redistribute it\nunder the condiditions set in the GNU General Public License version 3. See the file named LICENSE for details.")
-	fmt.Println("\nFor bugs, send mail to max@maxungless.com")
+	fmt.Println("\nFor bugs, send mail to max@maxungless.com\n")
 }
 
 // GetMaximumId retrieves the total prime count from previous runs.
@@ -110,6 +113,9 @@ func getLastPrime() *big.Int {
 		lastPrimeGenerated = scanner.Text()
 	}
 
+	if lastPrimeGenerated == "0" || lastPrimeGenerated == "" {
+		lastPrimeGenerated = startingPrime
+	}
 	foundPrime := new(big.Int)
 	foundPrime.SetString(lastPrimeGenerated, 10)
 	return foundPrime
@@ -155,6 +161,7 @@ func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNum
 
 	go func() {
 		if toInfinity {
+			fmt.Println(lastPrime)
 			for i := lastPrime; true; i.Add(i, big.NewInt(2)) {
 				numberToTest := big.NewInt(0).Set(i)
 				numbersToCheck <- numberToTest
@@ -210,17 +217,39 @@ func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNum
 
 func main() {
 	showProgramDetails()
-	arguments := os.Args
-	if len(arguments) == 2 {
-		switch arguments[1] {
-		case "count":
-			ShowCurrentCount()
-		case "run":
-			ComputePrimes(getLastPrime(), true, true, big.NewInt(0))
-		case "help":
+	isConfigured := IsConfigured()
+	if isConfigured {
+		arguments := os.Args
+		if len(arguments) == 2 {
+			switch arguments[1] {
+			case "count":
+				ShowCurrentCount()
+			case "run":
+				ComputePrimes(getLastPrime(), true, true, big.NewInt(0))
+			case "help":
+				showHelp()
+			case "configure":
+				RunConfigurator()
+			default:
+				fmt.Println("Please specify a valid command.")
+				showHelp()
+			}
+		} else if len(arguments) == 1 {
 			showHelp()
 		}
-	} else if len(arguments) == 1 {
-		showHelp()
+	} else {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("A configuration file could not be found.\nWould you like to generate one now? [y/n] ")
+		choice, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+		choice = strings.Trim(choice, " \n")
+
+		if strings.ToLower(choice) == "y" {
+			RunConfigurator()
+		} else {
+			os.Exit(1)
+		}
 	}
 }
