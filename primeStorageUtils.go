@@ -21,7 +21,7 @@ func GetUserHome() string {
 func createDirectory() {
 	_, err := os.Create(directory)
 	if err != nil {
-		panic(err)
+		os.Mkdir(base, 0775)
 	}
 }
 

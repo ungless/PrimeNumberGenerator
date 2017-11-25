@@ -1,3 +1,4 @@
+// Copyright (C) 2017 by Max Ungless
 // Main package for primegenerator. Generates primes.
 package main
 
@@ -8,7 +9,6 @@ import (
 	"math/big"
 	"os"
 	"sort"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -39,7 +39,7 @@ func formatFilePath(filename string) string {
 
 // checkPrimality checks whether number is a prime.
 func checkPrimality(number *big.Int) bool {
-	return number.ProbablyPrime(1)
+	return number.ProbablyPrime(100)
 }
 
 // displayPrimePretty displays successful prime generations nicely.
@@ -60,10 +60,18 @@ func displayFailPretty(number *big.Int, timeTaken time.Duration) {
 
 // showHelp shows help to the user.
 func showHelp() {
-	fmt.Println("One must specify at least one command to PrimeNumberGenerator.\nHere is the list of commands:")
-	fmt.Println("\ncount - Displays the total number of generated primes.")
-	fmt.Println("\nrun - Runs the program indefinetly.")
-	fmt.Println("\nhelp - Displays this screen. Gives help.")
+	fmt.Println("\nCOMMANDS")
+	fmt.Println("count \t Displays the total number of generated primes.")
+	fmt.Println("run \t Runs the program indefinetly.")
+	fmt.Println("help \t Displays this screen. Gives help.")
+}
+
+// showProgramDetails prints details about the program to STDOUT
+func showProgramDetails() {
+	fmt.Printf("PrimeNumberGenerator %s\n", version)
+	fmt.Println("\nCopyright (C) 2017 by Max Ungless")
+	fmt.Println("This program comes with ABSOLUTELY NO WARRANTY.\nThis is free software, and you are welcome to redistribute it\nunder the condiditions set in the GNU General Public License version 3. See the file named LICENSE for details.")
+	fmt.Println("\nFor bugs, send mail to max@maxungless.com")
 }
 
 // GetMaximumId retrieves the total prime count from previous runs.
@@ -102,12 +110,9 @@ func getLastPrime() *big.Int {
 		lastPrimeGenerated = scanner.Text()
 	}
 
-	lastPrimeAsInt, err := strconv.Atoi(lastPrimeGenerated)
-	if err != nil {
-		lastPrimeAsInt = startingPrime
-	}
-	fmt.Println(lastPrimeAsInt)
-	return big.NewInt(int64(lastPrimeAsInt))
+	foundPrime := new(big.Int)
+	foundPrime.SetString(lastPrimeGenerated, 10)
+	return foundPrime
 }
 
 // Round() is used to round numbers to the nearest x
@@ -204,9 +209,9 @@ func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNum
 }
 
 func main() {
+	showProgramDetails()
 	arguments := os.Args
 	if len(arguments) == 2 {
-		fmt.Println("Welcome to the Prime Number Generator.")
 		switch arguments[1] {
 		case "count":
 			ShowCurrentCount()

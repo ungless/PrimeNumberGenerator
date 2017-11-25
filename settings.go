@@ -7,6 +7,7 @@ var (
 )
 
 const (
+	version       = "0.0.1"
 	startingPrime = 1
 	maxFilesize   = 10000000
 	maxBufferSize = 200

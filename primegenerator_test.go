@@ -22,7 +22,7 @@ func TestCorrectPrimeNumberOutput(t *testing.T) {
 		value, expected := big.NewInt(test.test), test.expecting
 		isPrime := checkPrimality(value)
 		if isPrime != expected {
-			t.Errorf("Expected check_prime(%d) to be %t, instead got %t", value, expected, isPrime)
+			t.Errorf("Expected checkPrime(%d) to be %t, instead got %t", value, expected, isPrime)
 		}
 	}
 }
