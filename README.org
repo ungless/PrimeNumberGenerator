@@ -2,42 +2,78 @@
 
 This is a program that calculates primes concurrently using Go.
 
+* About
+
+I've had several of these prime number generating programs since 2014 or so. All of the others were written in Python aside from an earlier version of this program (that I would classify as different) written in Go.
+
+Go, I have seen, offers many advantages in this field including its concurrent abilities and high efficiency garbage collection. Throughout the development of this program I have learned much about Go.
+
+** Alternatives
+   
+   I must stress, that there are other programs that do very similar things to this one including [[http://www.mersenne.org][Mprime and Prime95]], which are both part of the GIMPS project (same link). 
+   GIMPS is an effort to discover Mersenne primes on a large scale internationally.
+   
+   This project is different, being that the goal is to create a large collection of prime numbers, ranging from 2 until the very largest.
+
+** GIMPS
+   
+   GIMPS is nice. Their software is nice. But there is one particularly disturbing clause in their terms relating to cash prizes - specifically the Electronic Frontier Foundation prizes:
+
+   #+BEGIN_QUOTE
+   GIMPS has undertaken an organized and systematic attempt to earn the $150,000 (USD) Electronic Frontier Foundation ("EFF") Cooperative Computing Award such that each Participant assigns all interest in this award entirely to GIMPS. Note that this Award may at current participation rates require an estimated 12-15 years of calculations before a qualifying discovery is made.
+   No money will be awarded unless and until a GIMPS Participant's computer discovers a 100,000,000 digit prime, it is independently verified, EFF validates GIMPS' claim according to their rules, and pays GIMPS the award.
+   #+END_QUOTE
+   https://www.mersenne.org/legal/#awards
+
+   This program will include none of such restrictions, but I will contemplate the specifics later.
+
+   GIMPS is also non-free, being licensed by their own license. The code is open-source, however. This program is a free-software alternative (without any restrictions seen in https://www.mersenne.org/legal/).
+
+** The Future
+   
+   I have three key goals here:
+   - To make a server variant for running nodes on the network
+   - To make this distributed across said network
+   - To have a wide range of algorithms available to choose from for prime assertion by any node
+
+   I hope I can fulfil them.
+
 * Installation
 
 1. Clone the repository
 
-#+BEGIN_SRC bash
+#+BEGIN_SRC
 git clone https://github.com/MaxTheMonster/PrimeNumberGenerator.git
 #+END_SRC
 
 2. Change directory
 
-#+BEGIN_SRC bash
+#+BEGIN_SRC
 cd PrimeNumberGenerator
 #+END_SRC
 
 3. Build it
 
-#+BEGIN_SRC bash
-go build -o primegen
+#+BEGIN_SRC
+make
 #+END_SRC
 
 4. Move the executable to your bin (as superuser)
 
-#+BEGIN_SRC bash
-# cp primegen /usr/bin/
+#+BEGIN_SRC
+make install
 #+END_SRC
 
 Now the program can be called from the command line
 
-#+BEGIN_SRC bash
-primegen
+#+BEGIN_SRC
+PrimeNumberGenerator
 #+END_SRC
 
 * Usage
 
-Refer to the help command for more.
+Refer to the _help_ command for more.
 
 #+BEGIN_SRC bash
-primegen help
+PrimeNumberGenerator help
 #+END_SRC
