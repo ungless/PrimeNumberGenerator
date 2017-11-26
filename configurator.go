@@ -13,7 +13,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -35,6 +35,45 @@ type Config struct {
 	MaxFilesize   int    `json:"maxfilesize"`
 	MaxBufferSize int    `json:"maxbuffersize"`
 	ShowFails     bool   `json:"showfails"`
+}
+
+// GetUserConfig returns a Config object containing the user's configuration
+func GetUserConfig() Config {
+	config := Config{}
+	if IsConfigured() {
+		y, err := ioutil.ReadFile(configurationFile)
+		if err != nil {
+			logger.Fatal(err)
+		}
+		err = yaml.Unmarshal(y, &config)
+		if err != nil {
+			logger.Fatal(err)
+		}
+		return config
+	} else {
+		EnsureUserWantsNewConfig()
+		logger.Fatal("Restart the program in order to apply this configuration.")
+	}
+	return config
+}
+
+// EnsureUserWantsNewConfig ensures user wants a new config and if so, runs the
+// configurator
+func EnsureUserWantsNewConfig() {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("A configuration file could not be found.\nWould you like to generate one now? [y/n] ")
+	choice, err := reader.ReadString('\n')
+	if err != nil {
+		logger.Fatal(err)
+	}
+	choice = strings.Trim(choice, " \n")
+
+	if strings.ToLower(choice) == "y" {
+		RunConfigurator()
+	} else {
+		os.Exit(1)
+	}
+
 }
 
 // IsConfigured returns whether the program is configured already
@@ -66,7 +105,7 @@ func getBaseDirectory() string {
 	fmt.Printf("Base directory (default: %s/.primes/): ", home)
 	userChoice, err := reader.ReadString('\n')
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	userChoice = strings.Trim(userChoice, " \n")
 	if userChoice == "" {
@@ -82,7 +121,7 @@ func getStartingPrime() string {
 	fmt.Print("Prime to begin generation at (default: 1): ")
 	userChoice, err := reader.ReadString('\n')
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	userChoice = strings.Trim(userChoice, " \n")
 	if userChoice == "" {
@@ -100,7 +139,7 @@ func getMaxFilesize() int {
 	fmt.Print("Maximum number of prime numbers in a file (default: 10000000): ")
 	userChoiceString, err := reader.ReadString('\n')
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	userChoiceString = strings.Trim(userChoiceString, " \n")
@@ -109,7 +148,7 @@ func getMaxFilesize() int {
 	} else {
 		userChoice, err = strconv.Atoi(userChoiceString)
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 	}
 	return userChoice
@@ -123,7 +162,7 @@ func getMaxBufferSize() int {
 	fmt.Print("Maximum number of prime numbers in a buffer before flushing (default: 300): ")
 	userChoiceString, err := reader.ReadString('\n')
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	userChoiceString = strings.Trim(userChoiceString, " \n")
@@ -132,7 +171,7 @@ func getMaxBufferSize() int {
 	} else {
 		userChoice, err = strconv.Atoi(userChoiceString)
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 	}
 	return userChoice
@@ -145,7 +184,7 @@ func getShowFails() bool {
 	fmt.Print("Show failed numbers (default: n) [y/n]: ")
 	userChoice, err := reader.ReadString('\n')
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	if strings.ToLower(userChoice) == "y" {
 		userChoiceBoolean = true
@@ -166,12 +205,12 @@ func generateConfig(base string, startingPrime string, maxFilesize int, maxBuffe
 	config, err := os.Create(home + "/.primegenerator.yaml")
 	defer config.Close()
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	c := Config{base, startingPrime, maxFilesize, maxBufferSize, showFails}
 	yaml, err := yaml.Marshal(c)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	config.Write(yaml)
 }

@@ -6,11 +6,9 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"log"
 	"math/big"
 	"os"
 	"sort"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -218,39 +216,22 @@ func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNum
 
 func main() {
 	showProgramDetails()
-	isConfigured := IsConfigured()
-	if isConfigured {
-		arguments := os.Args
-		if len(arguments) == 2 {
-			switch arguments[1] {
-			case "count":
-				ShowCurrentCount()
-			case "run":
-				ComputePrimes(getLastPrime(), true, true, big.NewInt(0))
-			case "help":
-				showHelp()
-			case "configure":
-				RunConfigurator()
-			default:
-				fmt.Println("Please specify a valid command.")
-				showHelp()
-			}
-		} else if len(arguments) == 1 {
+	arguments := os.Args
+	if len(arguments) == 2 {
+		switch arguments[1] {
+		case "count":
+			ShowCurrentCount()
+		case "run":
+			ComputePrimes(getLastPrime(), true, true, big.NewInt(0))
+		case "help":
+			showHelp()
+		case "configure":
+			RunConfigurator()
+		default:
+			fmt.Println("Please specify a valid command.")
 			showHelp()
 		}
-	} else {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("A configuration file could not be found.\nWould you like to generate one now? [y/n] ")
-		choice, err := reader.ReadString('\n')
-		if err != nil {
-			log.Fatal(err)
-		}
-		choice = strings.Trim(choice, " \n")
-
-		if strings.ToLower(choice) == "y" {
-			RunConfigurator()
-		} else {
-			os.Exit(1)
-		}
+	} else if len(arguments) == 1 {
+		showHelp()
 	}
 }

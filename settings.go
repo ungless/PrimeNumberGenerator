@@ -1,17 +1,25 @@
 package main
 
+import (
+	"log"
+	"os"
+)
+
+const (
+	version = "0.1.3"
+)
+
 var (
 	home              = GetUserHome()
 	base              = home + "/.primes/"
 	directory         = base + "directory.txt"
 	configurationFile = home + "/.primegenerator.yaml"
 
-	startingPrime = "1"
-	maxFilesize   = 10000000
-	maxBufferSize = 200
-	showFails     = false
-)
+	config        = GetUserConfig()
+	startingPrime = config.StartingPrime
+	maxFilesize   = config.MaxFilesize
+	maxBufferSize = config.MaxBufferSize
+	showFails     = config.ShowFails
 
-const (
-	version = "0.1.3"
+	logger = log.New(os.Stdout, "", log.LstdFlags)
 )
