@@ -36,8 +36,6 @@ Go, I have seen, offers many advantages in this field including its concurrent a
    - To make this distributed across said network
    - To have a wide range of algorithms available to choose from for prime assertion by any node
 
-   I hope I can fulfil them.
-
 * Installation
 
 1. Clone the repository
