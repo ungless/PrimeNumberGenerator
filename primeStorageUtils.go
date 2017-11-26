@@ -74,7 +74,7 @@ func getLastFileWritten() string {
 // isNewFileNeeded() checks wether a new file is needed by asserting that
 // the id is divisible by maxFilesize - as defined in settings.go
 func isNewFileNeeded(id uint64) bool {
-	modulusIdAndMaxFilesize := big.NewInt(0).Mod(big.NewInt(int64(id)), big.NewInt(maxFilesize))
+	modulusIdAndMaxFilesize := big.NewInt(0).Mod(big.NewInt(int64(id)), big.NewInt(int64(maxFilesize)))
 	divisibleByMaxFilesize := modulusIdAndMaxFilesize.Int64() == 0
 	return divisibleByMaxFilesize
 }
@@ -98,7 +98,7 @@ func OpenLatestFile(flag int, perm os.FileMode) *os.File {
 
 // getNextFileName() generates the name of the possible file
 func getNewFileName(id uint64) string {
-	nextFile := fmt.Sprintf("%d-%d", id, id+maxFilesize)
+	nextFile := fmt.Sprintf("%d-%d", id, id+uint64(maxFilesize))
 	return nextFile
 }
 

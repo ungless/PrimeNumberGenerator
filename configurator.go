@@ -1,3 +1,13 @@
+// This is the file for the Configurator - something which generates
+// a YAML config for this program.
+//
+// An example (with the default values):
+//     base: /home/max/.primes/
+//     startingprime: 1
+//     maxfilesize: 10000000
+//     maxbuffersize: 300
+//     showfails: false
+
 package main
 
 import (
@@ -7,6 +17,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/ghodss/yaml"
 )
 
 var (
@@ -17,15 +29,27 @@ var (
 	defaultShowFails     = false
 )
 
+type Config struct {
+	Base          string `json:"base"`
+	StartingPrime string `json:"startingprime"`
+	MaxFilesize   int    `json:"maxfilesize"`
+	MaxBufferSize int    `json:"maxbuffersize"`
+	ShowFails     bool   `json:"showfails"`
+}
+
 // IsConfigured returns whether the program is configured already
 func IsConfigured() bool {
-	return false
+	if _, err := os.Stat(configurationFile); os.IsNotExist(err) {
+		return false
+	} else {
+		return true
+	}
 }
 
 // RunConfigurator generates a program configuration according to
 // user input
 func RunConfigurator() {
-	fmt.Println("A config will now be generated in $HOME/.primegenerator")
+	fmt.Printf("A config will now be generated in %s\n", configurationFile)
 	base := getBaseDirectory()
 	startingPrime := getStartingPrime()
 	maxFilesize := getMaxFilesize()
@@ -33,7 +57,7 @@ func RunConfigurator() {
 	showFails := getShowFails()
 
 	generateConfig(base, startingPrime, maxFilesize, maxBufferSize, showFails)
-	fmt.Println("Done!")
+	fmt.Println("Your configuration has now been generated.")
 }
 
 // getBaseDirectory returns the user's preference for a base directory
@@ -139,5 +163,15 @@ func getShowFails() bool {
 
 // generateConfig concatinates the user's preferences into YAML format
 func generateConfig(base string, startingPrime string, maxFilesize int, maxBufferSize int, showFails bool) {
-
+	config, err := os.Create(home + "/.primegenerator.yaml")
+	defer config.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	c := Config{base, startingPrime, maxFilesize, maxBufferSize, showFails}
+	yaml, err := yaml.Marshal(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config.Write(yaml)
 }

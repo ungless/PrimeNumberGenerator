@@ -18,7 +18,7 @@ import (
 
 var (
 	globalCount        = big.NewInt(0)
-	id          uint64 = uint64(Round(float64(GetMaximumId()), maxBufferSize))
+	id          uint64 = uint64(Round(float64(GetMaximumId()), float64(maxBufferSize)))
 	mu          sync.Mutex
 )
 
@@ -142,7 +142,7 @@ func FlushBufferToFile(buffer bigIntSlice) {
 	defer mu.Unlock()
 	fmt.Println("Writing buffer....")
 	sort.Sort(buffer)
-	atomic.AddUint64(&id, maxBufferSize)
+	atomic.AddUint64(&id, uint64(maxBufferSize))
 
 	file := OpenLatestFile(os.O_APPEND|os.O_WRONLY, 0600)
 	defer file.Close()
