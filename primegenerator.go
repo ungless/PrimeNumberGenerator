@@ -54,7 +54,7 @@ func displayFailPretty(number *big.Int, timeTaken time.Duration) {
 
 // showHelp shows help to the user.
 func showHelp() {
-	fmt.Println("\nCOMMANDS")
+	fmt.Println("COMMANDS")
 	fmt.Println("count \t Displays the total number of generated primes.")
 	fmt.Println("configure \t Generates a configuration for the program.")
 	fmt.Println("run \t Runs the program indefinitely.")
