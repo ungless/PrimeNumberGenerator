@@ -1,4 +1,4 @@
-#+TITLE: Prime Number Generator / Primes
+#+TITLE: Prime Number Generator / Primes Version 0.2.0
 
 This is a program that calculates primes concurrently using Go.
 
@@ -75,3 +75,5 @@ Refer to the _help_ command for more.
 #+BEGIN_SRC bash
 PrimeNumberGenerator help
 #+END_SRC
+
+This program is released under the GNU General Public License version 3. Refer to the file named LICENSE for details.
