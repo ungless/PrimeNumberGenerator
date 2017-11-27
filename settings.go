@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"math/big"
 	"os"
+	"sync"
 )
 
 const (
@@ -15,11 +17,15 @@ var (
 	directory         = base + "directory.txt"
 	configurationFile = home + "/.primegenerator.yaml"
 
-	config        = GetUserConfig()
-	startingPrime = config.StartingPrime
-	maxFilesize   = config.MaxFilesize
-	maxBufferSize = config.MaxBufferSize
-	showFails     = config.ShowFails
+	config        = Config{}
+	startingPrime string
+	maxFilesize   int
+	maxBufferSize int
+	showFails     bool
 
 	logger = log.New(os.Stdout, "", log.LstdFlags)
+
+	globalCount        = big.NewInt(0)
+	id          uint64 = 0
+	mu          sync.Mutex
 )

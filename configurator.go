@@ -39,6 +39,7 @@ type Config struct {
 
 // GetUserConfig returns a Config object containing the user's configuration
 func GetUserConfig() Config {
+	logger.Print("Searching for user's configuration")
 	config := Config{}
 	if IsConfigured() {
 		y, err := ioutil.ReadFile(configurationFile)
@@ -49,8 +50,10 @@ func GetUserConfig() Config {
 		if err != nil {
 			logger.Fatal(err)
 		}
+		logger.Print("Found user's already existing configuration")
 		return config
 	} else {
+		logger.Print("No configuration found")
 		EnsureUserWantsNewConfig()
 		logger.Fatal("Restart the program in order to apply this configuration.")
 	}

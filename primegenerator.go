@@ -9,16 +9,12 @@ import (
 	"math/big"
 	"os"
 	"sort"
-	"sync"
+	//	"sync"
 	"sync/atomic"
 	"time"
 )
 
-var (
-	globalCount        = big.NewInt(0)
-	id          uint64 = uint64(Round(float64(GetMaximumId()), float64(maxBufferSize)))
-	mu          sync.Mutex
-)
+var ()
 
 type prime struct {
 	id        uint64
@@ -76,6 +72,14 @@ func showProgramDetails() {
 	fmt.Println()
 }
 
+// GetCurrentId returns the current id, rounded to nearest hundred
+func GetCurrentId() uint64 {
+	logger.Print("Finding current nth prime number")
+	maximumId := GetMaximumId()
+	currentId := uint64(Round(float64(maximumId), float64(maxBufferSize)))
+	return currentId
+}
+
 // GetMaximumId retrieves the total prime count from previous runs.
 func GetMaximumId() uint64 {
 	var maximumId uint64
@@ -103,6 +107,7 @@ func GetMaximumId() uint64 {
 // getLastPrime() searches for last generated prime
 // in all prime storage files.
 func getLastPrime() *big.Int {
+	fmt.Println(startingPrime)
 	latestFile := OpenLatestFile(os.O_RDONLY, 0666)
 	defer latestFile.Close()
 
@@ -214,24 +219,40 @@ func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNum
 	}
 }
 
-func main() {
+func init() {
 	showProgramDetails()
+	arguments := os.Args
+	if len(arguments) == 2 && arguments[1] == "help" {
+		showHelp()
+		return
+	} else if len(arguments) == 1 {
+		showHelp()
+		return
+	}
+	id = GetCurrentId()
+	config = GetUserConfig()
+	startingPrime = config.StartingPrime
+	maxFilesize = config.MaxFilesize
+	maxBufferSize = config.MaxBufferSize
+	showFails = config.ShowFails
+
+}
+
+func main() {
 	arguments := os.Args
 	if len(arguments) == 2 {
 		switch arguments[1] {
 		case "count":
 			ShowCurrentCount()
 		case "run":
-			ComputePrimes(getLastPrime(), true, true, big.NewInt(0))
-		case "help":
-			showHelp()
+			logger.Print("Finding last prime generated.")
+			lastPrimeGenerated := getLastPrime()
+			ComputePrimes(lastPrimeGenerated, true, true, big.NewInt(0))
 		case "configure":
 			RunConfigurator()
 		default:
 			fmt.Println("Please specify a valid command.")
 			showHelp()
 		}
-	} else if len(arguments) == 1 {
-		showHelp()
 	}
 }
