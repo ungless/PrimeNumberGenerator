@@ -14,8 +14,6 @@ import (
 	"time"
 )
 
-var ()
-
 type prime struct {
 	id        uint64
 	value     *big.Int
@@ -235,7 +233,6 @@ func init() {
 	maxFilesize = config.MaxFilesize
 	maxBufferSize = config.MaxBufferSize
 	showFails = config.ShowFails
-
 }
 
 func main() {
@@ -250,6 +247,8 @@ func main() {
 			ComputePrimes(lastPrimeGenerated, true, true, big.NewInt(0))
 		case "configure":
 			RunConfigurator()
+		case "help":
+			return
 		default:
 			fmt.Println("Please specify a valid command.")
 			showHelp()
