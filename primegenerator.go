@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"os"
 	"sort"
-	//	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -163,7 +162,6 @@ func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNum
 
 	go func() {
 		if toInfinity {
-			fmt.Println(lastPrime)
 			for i := lastPrime; true; i.Add(i, big.NewInt(2)) {
 				numberToTest := big.NewInt(0).Set(i)
 				numbersToCheck <- numberToTest
