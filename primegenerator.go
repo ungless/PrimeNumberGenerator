@@ -13,6 +13,10 @@ import (
 	"time"
 )
 
+var (
+	id uint64 = 0
+)
+
 type prime struct {
 	id        uint64
 	value     *big.Int
@@ -73,25 +77,24 @@ func showProgramDetails() {
 func GetCurrentId() uint64 {
 	logger.Print("Finding current nth prime number")
 	maximumId := GetMaximumId()
+	logger.Print(maximumId)
 	currentId := uint64(Round(float64(maximumId), float64(maxBufferSize)))
+	logger.Print(currentId)
 	return currentId
 }
 
 // GetMaximumId retrieves the total prime count from previous runs.
 func GetMaximumId() uint64 {
 	var maximumId uint64
-
 	openDirectory := OpenDirectory(os.O_RDONLY, 0600)
 	defer openDirectory.Close()
 	scanner := bufio.NewScanner(openDirectory)
-
 	for scanner.Scan() {
 		filename := scanner.Text()
 		file, err := os.Open(formatFilePath(filename))
 		if err != nil {
 			break
 		}
-
 		fileScanner := bufio.NewScanner(file)
 		for fileScanner.Scan() {
 			maximumId += 1
@@ -104,16 +107,16 @@ func GetMaximumId() uint64 {
 // getLastPrime() searches for last generated prime
 // in all prime storage files.
 func getLastPrime() *big.Int {
-	fmt.Println(startingPrime)
 	latestFile := OpenLatestFile(os.O_RDONLY, 0666)
 	defer latestFile.Close()
 
 	var lastPrimeGenerated string
 	scanner := bufio.NewScanner(latestFile)
 	for scanner.Scan() {
+		fmt.Println(lastPrimeGenerated)
 		lastPrimeGenerated = scanner.Text()
 	}
-
+	logger.Fatal()
 	if lastPrimeGenerated == "0" || lastPrimeGenerated == "" {
 		lastPrimeGenerated = startingPrime
 	}
@@ -220,12 +223,13 @@ func init() {
 	arguments := os.Args
 	if len(arguments) == 2 && arguments[1] == "help" {
 		showHelp()
-		return
+		os.Exit(1)
 	} else if len(arguments) == 1 {
 		showHelp()
-		return
+		os.Exit(1)
 	}
 	id = GetCurrentId()
+	logger.Print(id)
 	config = GetUserConfig()
 	startingPrime = config.StartingPrime
 	maxFilesize = config.MaxFilesize
@@ -245,8 +249,6 @@ func main() {
 			ComputePrimes(lastPrimeGenerated, true, true, big.NewInt(0))
 		case "configure":
 			RunConfigurator()
-		case "help":
-			return
 		default:
 			fmt.Println("Please specify a valid command.")
 			showHelp()
