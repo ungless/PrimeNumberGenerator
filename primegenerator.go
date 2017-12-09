@@ -13,9 +13,7 @@ import (
 	"time"
 )
 
-var (
-	id uint64 = 0
-)
+var id uint64
 
 type prime struct {
 	id        uint64
@@ -75,11 +73,8 @@ func showProgramDetails() {
 
 // GetCurrentId returns the current id, rounded to nearest hundred
 func GetCurrentId() uint64 {
-	logger.Print("Finding current nth prime number")
 	maximumId := GetMaximumId()
-	logger.Print(maximumId)
 	currentId := uint64(Round(float64(maximumId), float64(maxBufferSize)))
-	logger.Print(currentId)
 	return currentId
 }
 
@@ -113,10 +108,8 @@ func getLastPrime() *big.Int {
 	var lastPrimeGenerated string
 	scanner := bufio.NewScanner(latestFile)
 	for scanner.Scan() {
-		fmt.Println(lastPrimeGenerated)
 		lastPrimeGenerated = scanner.Text()
 	}
-	logger.Fatal()
 	if lastPrimeGenerated == "0" || lastPrimeGenerated == "" {
 		lastPrimeGenerated = startingPrime
 	}
@@ -228,13 +221,12 @@ func init() {
 		showHelp()
 		os.Exit(1)
 	}
-	id = GetCurrentId()
-	logger.Print(id)
 	config = GetUserConfig()
 	startingPrime = config.StartingPrime
 	maxFilesize = config.MaxFilesize
 	maxBufferSize = config.MaxBufferSize
 	showFails = config.ShowFails
+	id = GetCurrentId()
 }
 
 func main() {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"math/big"
 	"os"
 	"sync"
 )
@@ -24,8 +23,5 @@ var (
 	showFails     bool
 
 	logger = log.New(os.Stdout, "", log.LstdFlags)
-
-	globalCount        = big.NewInt(0)
-	id          uint64 = 0
-	mu          sync.Mutex
+	mu     sync.Mutex
 )

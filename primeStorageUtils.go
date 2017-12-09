@@ -19,9 +19,8 @@ func GetUserHome() string {
 
 // createPrimesBase makes the base directory
 func createPrimesBase() {
-	fmt.Println("Mkdir")
+	logger.Print("Creating base directory")
 	os.Mkdir(base, os.ModePerm)
-	fmt.Println("Done")
 }
 
 // createDirectory creates the directory.txt file as defined
@@ -107,10 +106,8 @@ func getNewFileName(id uint64) string {
 func createNextFile(newFileName string) {
 	directory := OpenDirectory(os.O_APPEND|os.O_WRONLY, 0600)
 	defer directory.Close()
-
 	directory.WriteString(newFileName + "\n")
-	fmt.Println("Creating next file.", newFileName)
-
+	logger.Print("Creating next file. ", newFileName)
 	_, err := os.Create(formatFilePath(newFileName))
 	if err != nil {
 		panic(err)
