@@ -34,7 +34,7 @@ func formatFilePath(filename string) string {
 
 // checkPrimality checks whether number is a prime.
 func checkPrimality(number *big.Int) bool {
-	return number.ProbablyPrime(1)
+	return number.ProbablyPrime(0)
 }
 
 // displayPrimePretty displays successful prime generations nicely.
