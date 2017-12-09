@@ -66,7 +66,7 @@ func showHelp() {
 func showProgramDetails() {
 	fmt.Printf("PrimeNumberGenerator %s", version)
 	fmt.Println("\nCopyright (C) 2017 by Max Ungless")
-	fmt.Println("This program comes with ABSOLUTELY NO WARRANTY.\nThis is free software, and you are welcome to redistribute it\nunder the condiditions set in the GNU General Public License version 3. See the file named LICENSE for details.")
+	fmt.Println("This program comes with ABSOLUTELY NO WARRANTY.\nThis is free software, and you are welcome to redistribute it\nunder the condiditions set in the GNU General Public License version 3.\nSee the file named LICENSE for details.")
 	fmt.Println("\nFor bugs, send mail to max@maxungless.com")
 	fmt.Println()
 }
