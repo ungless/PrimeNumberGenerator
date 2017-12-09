@@ -1,4 +1,4 @@
-#+TITLE: Prime Number Generator / Primes Version 0.2.0
+#+TITLE: Prime Number Generator / Primes Version 0.2.2
 
 This is a program that calculates primes concurrently using Go.
 
