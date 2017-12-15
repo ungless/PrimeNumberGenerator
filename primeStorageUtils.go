@@ -30,7 +30,6 @@ func createDirectory() {
 	if err != nil {
 		createPrimesBase()
 		_, err := os.Create(directory)
-
 		if err != nil {
 			panic(err)
 		}

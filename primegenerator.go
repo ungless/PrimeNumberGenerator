@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"math/big"
 	"os"
 	"sort"
@@ -60,6 +61,7 @@ func showHelp() {
 	fmt.Println("configure \t Generates a configuration for the program.")
 	fmt.Println("run \t Runs the program indefinitely.")
 	fmt.Println("help \t Displays this screen. Gives help.")
+	os.Exit(1)
 }
 
 // showProgramDetails prints details about the program to STDOUT
@@ -73,13 +75,13 @@ func showProgramDetails() {
 
 // GetCurrentId returns the current id, rounded to nearest hundred
 func GetCurrentId() uint64 {
-	maximumId := GetMaximumId()
+	maximumId := GetTotalPrimeCount()
 	currentId := uint64(Round(float64(maximumId), float64(maxBufferSize)))
 	return currentId
 }
 
-// GetMaximumId retrieves the total prime count from previous runs.
-func GetMaximumId() uint64 {
+// GetTotalPrimeCount finds the number of lines in each file
+func GetTotalPrimeCount() uint64 {
 	var maximumId uint64
 	openDirectory := OpenDirectory(os.O_RDONLY, 0600)
 	defer openDirectory.Close()
@@ -90,13 +92,35 @@ func GetMaximumId() uint64 {
 		if err != nil {
 			break
 		}
-		fileScanner := bufio.NewScanner(file)
-		for fileScanner.Scan() {
-			maximumId += 1
+
+		r := bufio.NewReader(file)
+		linesInFile, err := getLinesInFile(r)
+		if err != nil {
+			logger.Fatal(err)
 		}
-		file.Close()
+		maximumId += uint64(linesInFile)
 	}
 	return maximumId
+}
+
+// getLinesInFile counts the lines of a given file
+func getLinesInFile(r io.Reader) (int, error) {
+	buf := make([]byte, 32*1024)
+	count := 0
+	lineSep := []byte{'\n'}
+
+	for {
+		c, err := r.Read(buf)
+		count += bytes.Count(buf[:c], lineSep)
+
+		switch {
+		case err == io.EOF:
+			return count, nil
+
+		case err != nil:
+			return count, err
+		}
+	}
 }
 
 // getLastPrime() searches for last generated prime
@@ -211,33 +235,51 @@ func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNum
 	}
 }
 
-func init() {
-	showProgramDetails()
-	arguments := os.Args
-	if len(arguments) == 2 && arguments[1] == "help" {
-		showHelp()
-		os.Exit(1)
-	} else if len(arguments) == 1 {
-		showHelp()
-		os.Exit(1)
+// ensureConfigExists continually checks whether the user's config is loaded exists on the user's system
+func ensureConfigExists() {
+	configLoaded := false
+	for configLoaded == false {
+		if id != 0 {
+			configLoaded = true
+		}
 	}
+}
+
+// SetConfiguration sets the global configuration variables
+func SetConfiguration() {
 	config = GetUserConfig()
 	startingPrime = config.StartingPrime
 	maxFilesize = config.MaxFilesize
 	maxBufferSize = config.MaxBufferSize
 	showFails = config.ShowFails
+}
+
+// SetId sets the gloabl id variable
+func SetId() {
 	id = GetCurrentId()
+}
+
+func init() {
+	showProgramDetails()
+	SetConfiguration()
 }
 
 func main() {
 	arguments := os.Args
-	if len(arguments) == 2 {
+	if len(arguments) == 1 {
+		showHelp()
+	} else if len(arguments) == 2 {
 		switch arguments[1] {
+		case "help":
+			showHelp()
 		case "count":
+			SetId()
 			ShowCurrentCount()
 		case "run":
+			SetId()
 			logger.Print("Finding last prime generated.")
 			lastPrimeGenerated := getLastPrime()
+			logger.Print("Found last prime generated")
 			ComputePrimes(lastPrimeGenerated, true, true, big.NewInt(0))
 		case "configure":
 			RunConfigurator()

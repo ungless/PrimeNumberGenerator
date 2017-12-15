@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	version = "0.2.2"
+	version = "0.2.3"
 )
 
 var (
@@ -24,4 +24,6 @@ var (
 
 	logger = log.New(os.Stdout, "", log.LstdFlags)
 	mu     sync.Mutex
+
+	commands = []string{"help", "count", "run", "configure"}
 )
