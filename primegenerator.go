@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/big"
 	"os"
 	"sort"
@@ -60,7 +61,9 @@ func showHelp() {
 	fmt.Println("count \t Displays the total number of generated primes.")
 	fmt.Println("configure \t Generates a configuration for the program.")
 	fmt.Println("run \t Runs the program indefinitely.")
+	fmt.Println("version \t Displays the version of the program.")
 	fmt.Println("help \t Displays this screen. Gives help.")
+
 	os.Exit(1)
 }
 
@@ -260,6 +263,7 @@ func SetId() {
 }
 
 func init() {
+	logger.SetOutput(ioutil.Discard)
 	showProgramDetails()
 	SetConfiguration()
 }
@@ -283,6 +287,8 @@ func main() {
 			ComputePrimes(lastPrimeGenerated, true, true, big.NewInt(0))
 		case "configure":
 			RunConfigurator()
+		case "version":
+			ShowVersion()
 		default:
 			fmt.Println("Please specify a valid command.")
 			showHelp()

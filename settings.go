@@ -24,6 +24,4 @@ var (
 
 	logger = log.New(os.Stdout, "", log.LstdFlags)
 	mu     sync.Mutex
-
-	commands = []string{"help", "count", "run", "configure"}
 )
