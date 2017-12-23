@@ -1,34 +1,51 @@
 package client
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"net/http"
-	//	"time"
+	"time"
 
+	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
+	"github.com/MaxTheMonster/PrimeNumberGenerator/id"
+	"github.com/MaxTheMonster/PrimeNumberGenerator/primes"
 	app "github.com/urfave/cli"
 )
 
+func getUnMarshalledComputation(body string) computation.Computation {
+	var c computation.Computation
+	err := json.Unmarshal([]byte(body), &c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return c
+}
+
 // getNextComputation returns a computation hash given by
 // the server
-func getNextComputationToPerform() (string, error) {
+func getNextComputationToPerform() (computation.Computation, error) {
 	log.Print("Requesting next computation")
-	resp, err := http.Get("http://localhost:8080/test")
+	resp, err := http.Get("http://localhost:8080")
 	if err != nil {
 		log.Print("Cannot connect to server")
-		return "", err
+		return computation.Computation{}, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	log.Print("Found computation")
-	return string(body), nil
+	computation := getUnMarshalledComputation(string(body))
+	return computation, nil
 }
 
 // LaunchClient launches the client application, and manages
 // goroutines
 func LaunchClient(c *app.Context) {
-	computationsToPerform := make(chan string, 10)
+	computationsToPerform := make(chan computation.Computation, 10)
+	validComputations := make(chan computation.Computation, 10)
+	invalidComputations := make(chan computation.Computation, 10)
 	go func() {
 		for {
 			nextComputation, err := getNextComputationToPerform()
@@ -40,8 +57,27 @@ func LaunchClient(c *app.Context) {
 		}
 	}()
 
-	for computation := range computationsToPerform {
+	for c := range computationsToPerform {
 		// Check its primatlity, then feed into channel if successful
-		fmt.Println(computation)
+		i := c.Prime.Value
+		go func(i *big.Int) {
+			start := time.Now()
+			isPrime := primes.CheckPrimality(i)
+			if isPrime == true {
+				computationPrime := primes.Prime{
+					TimeTaken: time.Now().Sub(start),
+					Value:     i,
+					Id:        id.Id,
+				}
+				validComputations <- computation.Computation{computationPrime, c.Divisor, c.Hash}
+			} else {
+				computationPrime := primes.Prime{
+					TimeTaken: time.Now().Sub(start),
+					Value:     i,
+				}
+				invalidComputations <- computation.Computation{computationPrime, c.Divisor, c.Hash}
+			}
+		}(i)
+		fmt.Println(c)
 	}
 }

@@ -14,7 +14,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Fprintf(w, "userip: %q is not IP:port", r.RemoteAddr)
 	}
-	fmt.Printf("%s: Sending hash", port)
+	fmt.Printf("%s: Sending hash\n", port)
 	c := computation.GetNextComputation()
 	json, err := computation.GetJSON(c)
 	if err != nil {
