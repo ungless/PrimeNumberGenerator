@@ -13,9 +13,14 @@ import (
 	"sort"
 	"sync/atomic"
 	"time"
+
+	"github.com/urfave/cli"
 )
 
-var id uint64
+var (
+	id                 uint64
+	lastPrimeGenerated *big.Int
+)
 
 type prime struct {
 	id        uint64
@@ -34,7 +39,7 @@ func formatFilePath(filename string) string {
 	return base + filename + ".txt"
 }
 
-// checkPrimality checks whether number is a prime.
+// checknPrimality checks whether number is a prime.
 func checkPrimality(number *big.Int) bool {
 	return number.ProbablyPrime(0)
 }
@@ -238,30 +243,6 @@ func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNum
 	}
 }
 
-// ensureConfigExists continually checks whether the user's config is loaded exists on the user's system
-func ensureConfigExists() {
-	configLoaded := false
-	for configLoaded == false {
-		if id != 0 {
-			configLoaded = true
-		}
-	}
-}
-
-// SetConfiguration sets the global configuration variables
-func SetConfiguration() {
-	config = GetUserConfig()
-	startingPrime = config.StartingPrime
-	maxFilesize = config.MaxFilesize
-	maxBufferSize = config.MaxBufferSize
-	showFails = config.ShowFails
-}
-
-// SetId sets the gloabl id variable
-func SetId() {
-	id = GetCurrentId()
-}
-
 func init() {
 	logger.SetOutput(ioutil.Discard)
 	showProgramDetails()
@@ -269,29 +250,48 @@ func init() {
 }
 
 func main() {
-	arguments := os.Args
-	if len(arguments) == 1 {
-		showHelp()
-	} else if len(arguments) == 2 {
-		switch arguments[1] {
-		case "help":
-			showHelp()
-		case "count":
-			SetId()
-			ShowCurrentCount()
-		case "run":
-			SetId()
-			logger.Print("Finding last prime generated.")
-			lastPrimeGenerated := getLastPrime()
-			logger.Print("Found last prime generated")
-			ComputePrimes(lastPrimeGenerated, true, true, big.NewInt(0))
-		case "configure":
-			RunConfigurator()
-		case "version":
-			ShowVersion()
-		default:
-			fmt.Println("Please specify a valid command.")
-			showHelp()
-		}
+	app := cli.NewApp()
+	app.Name = appName
+	app.Usage = appUsage
+	app.Version = version
+
+	app.Commands = []cli.Command{
+		{
+			Name:    "configure",
+			Aliases: []string{"cn"},
+			Usage:   descConfigure,
+			Action: func(c *cli.Context) error {
+				RunConfigurator()
+				return nil
+			},
+		},
+		{
+			Name:    "count",
+			Aliases: []string{"ct"},
+			Usage:   descCount,
+			Before: func(c *cli.Context) error {
+				SetId()
+				return nil
+			},
+			Action: func(c *cli.Context) error {
+				ShowCurrentCount()
+				return nil
+			},
+		},
+		{
+			Name:    "run",
+			Aliases: []string{"r"},
+			Usage:   descRun,
+			Before: func(c *cli.Context) error {
+				SetId()
+				SetLastPrimeGenerated()
+				return nil
+			},
+			Action: func(c *cli.Context) error {
+				ComputePrimes(lastPrimeGenerated, true, true, big.NewInt(0))
+				return nil
+			},
+		},
 	}
+	app.Run(os.Args)
 }

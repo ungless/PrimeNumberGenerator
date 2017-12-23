@@ -7,7 +7,13 @@ import (
 )
 
 const (
-	version = "0.2.4"
+	version  = "0.2.4"
+	appName  = "PrimeNumberGenerator"
+	appUsage = "Generate prime numbers forever"
+
+	descConfigure = "Runs auto-configuration wizard"
+	descCount     = "Displays the estimated curren n prime numbers"
+	descRun       = "Begins computation of primes"
 )
 
 var (

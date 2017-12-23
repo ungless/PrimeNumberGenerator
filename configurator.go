@@ -217,3 +217,32 @@ func generateConfig(base string, startingPrime string, maxFilesize int, maxBuffe
 	}
 	config.Write(yaml)
 }
+
+// ensureConfigExists continually checks whether the user's config is loaded exists on the user's system
+func ensureConfigExists() {
+	configLoaded := false
+	for configLoaded == false {
+		if id != 0 {
+			configLoaded = true
+		}
+	}
+}
+
+// SetConfiguration sets the global configuration variables
+func SetConfiguration() {
+	config = GetUserConfig()
+	startingPrime = config.StartingPrime
+	maxFilesize = config.MaxFilesize
+	maxBufferSize = config.MaxBufferSize
+	showFails = config.ShowFails
+}
+
+// SetId sets the gloabl id variable
+func SetId() {
+	id = GetCurrentId()
+}
+
+// SetLastPrimeGenerated sets the global lastprimegenerated variable
+func SetLastPrimeGenerated() {
+	lastPrimeGenerated = getLastPrime()
+}
