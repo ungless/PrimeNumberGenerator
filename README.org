@@ -3,7 +3,7 @@
 This is a program that calculates primes concurrently using Go.
 
 * About
-
+  
 I've had several of these prime number generating programs since 2014 or so. All of the others were written in Python aside from an earlier version of this program (that I would classify as different) written in Go.
 
 Go, I have seen, offers many advantages in this field including its concurrent abilities and high efficiency garbage collection. Throughout the development of this program I have learned much about Go.
@@ -38,42 +38,42 @@ Go, I have seen, offers many advantages in this field including its concurrent a
 
 * Installation
 
-1. Clone the repository
+  1. Clone the repository
 
-#+BEGIN_SRC
+  #+BEGIN_SRC
 git clone https://github.com/MaxTheMonster/PrimeNumberGenerator.git
-#+END_SRC
+  #+END_SRC
 
-2. Change directory
+  2. Change directory
 
-#+BEGIN_SRC
+  #+BEGIN_SRC
 cd PrimeNumberGenerator
-#+END_SRC
+  #+END_SRC
 
-3. Build it
+  3. Build it
 
-#+BEGIN_SRC
+  #+BEGIN_SRC
 make
-#+END_SRC
+  #+END_SRC
 
-4. Move the executable to your bin (as superuser)
+  4. Move the executable to your bin (as superuser)
 
-#+BEGIN_SRC
+  #+BEGIN_SRC
 make install
-#+END_SRC
+  #+END_SRC
 
-Now the program can be called from the command line
+  Now the program can be called from the command line
 
-#+BEGIN_SRC
+  #+BEGIN_SRC
 PrimeNumberGenerator
-#+END_SRC
+  #+END_SRC
 
 * Usage
 
-Refer to the _help_ command for more.
+  Refer to the _help_ command for more.
 
-#+BEGIN_SRC bash
+  #+BEGIN_SRC
 PrimeNumberGenerator help
-#+END_SRC
+  #+END_SRC
 
-This program is released under the GNU General Public License version 3. Refer to the file named LICENSE for details.
+  This program is released under the GNU General Public License version 3. Refer to the file named LICENSE for details.
