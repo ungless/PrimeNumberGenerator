@@ -5,14 +5,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
+	//	"time"
 
 	app "github.com/urfave/cli"
 )
 
 // getNextComputation returns a computation hash given by
 // the server
-func getNextComputation() (string, error) {
+func getNextComputationToPerform() (string, error) {
 	log.Print("Requesting next computation")
 	resp, err := http.Get("http://localhost:8080/test")
 	if err != nil {
@@ -21,7 +21,7 @@ func getNextComputation() (string, error) {
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	log.Printf("Found computation %s", body)
+	log.Print("Found computation")
 	return string(body), nil
 }
 
@@ -31,8 +31,7 @@ func LaunchClient(c *app.Context) {
 	computationsToPerform := make(chan string, 10)
 	go func() {
 		for {
-			time.Sleep(3 * time.Second)
-			nextComputation, err := getNextComputation()
+			nextComputation, err := getNextComputationToPerform()
 			if err != nil {
 				log.Print("Retrying connection")
 				continue
@@ -42,6 +41,7 @@ func LaunchClient(c *app.Context) {
 	}()
 
 	for computation := range computationsToPerform {
+		// Check its primatlity, then feed into channel if successful
 		fmt.Println(computation)
 	}
 }

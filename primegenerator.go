@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/MaxTheMonster/PrimeNumberGenerator/client"
+	"github.com/MaxTheMonster/PrimeNumberGenerator/primes"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/server"
 	"github.com/urfave/cli"
 )
@@ -23,12 +24,6 @@ var (
 	id                 uint64
 	lastPrimeGenerated *big.Int
 )
-
-type prime struct {
-	id        uint64
-	value     *big.Int
-	timeTaken time.Duration
-}
 
 type bigIntSlice []*big.Int
 
@@ -39,27 +34,6 @@ func (s bigIntSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 // formatFilePath formats inputted filename to create a proper file path.
 func formatFilePath(filename string) string {
 	return base + filename + ".txt"
-}
-
-// checknPrimality checks whether number is a prime.
-func checkPrimality(number *big.Int) bool {
-	return number.ProbablyPrime(0)
-}
-
-// displayPrimePretty displays successful prime generations nicely.
-func displayPrimePretty(number *big.Int, timeTaken time.Duration) {
-	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[4;30;42mSuccess\x1b[0m\t%s\x1b[0m\n",
-		number,
-		timeTaken,
-	)
-}
-
-// displayFailPretty displays failed prime generations nicely.
-func displayFailPretty(number *big.Int, timeTaken time.Duration) {
-	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[2;1;41mFail\x1b[0m\t%s\t\x1b[0m\n",
-		number,
-		timeTaken,
-	)
 }
 
 // showHelp shows help to the user.
@@ -186,8 +160,8 @@ func FlushBufferToFile(buffer bigIntSlice) {
 // ComputePrimes computes primes concurrently until KeyboardInterrupt
 func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNumber *big.Int) {
 	numbersToCheck := make(chan *big.Int, 100)
-	validPrimes := make(chan prime, 100)
-	invalidPrimes := make(chan prime, 100)
+	validPrimes := make(chan primes.Prime, 100)
+	invalidPrimes := make(chan primes.Prime, 100)
 	var primeBuffer bigIntSlice
 
 	go func() {
@@ -206,21 +180,21 @@ func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNum
 
 	go func() {
 		for elem := range validPrimes {
-			primeBuffer = append(primeBuffer, elem.value)
+			primeBuffer = append(primeBuffer, elem.Value)
 			if len(primeBuffer) == maxBufferSize {
 				if writeToFile {
 					FlushBufferToFile(primeBuffer)
 				}
 				primeBuffer = nil
 			}
-			displayPrimePretty(elem.value, elem.timeTaken)
+			primes.DisplayPrimePretty(elem.Value, elem.TimeTaken)
 		}
 	}()
 
 	go func() {
 		for elem := range invalidPrimes {
 			if showFails == true {
-				displayFailPretty(elem.value, elem.timeTaken)
+				primes.DisplayFailPretty(elem.Value, elem.TimeTaken)
 			}
 		}
 	}()
@@ -228,17 +202,17 @@ func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNum
 	for i := range numbersToCheck {
 		go func(i *big.Int) {
 			start := time.Now()
-			isPrime := checkPrimality(i)
+			isPrime := primes.CheckPrimality(i)
 			if isPrime == true {
-				validPrimes <- prime{
-					timeTaken: time.Now().Sub(start),
-					value:     i,
-					id:        id,
+				validPrimes <- primes.Prime{
+					TimeTaken: time.Now().Sub(start),
+					Value:     i,
+					Id:        id,
 				}
 			} else {
-				invalidPrimes <- prime{
-					timeTaken: time.Now().Sub(start),
-					value:     i,
+				invalidPrimes <- primes.Prime{
+					TimeTaken: time.Now().Sub(start),
+					Value:     i,
 				}
 			}
 		}(i)

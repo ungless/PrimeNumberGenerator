@@ -1,0 +1,39 @@
+package primes
+
+import (
+	"fmt"
+	"math/big"
+)
+
+type prime struct {
+	id        uint64
+	value     *big.Int
+	timeTaken time.Duration
+}
+
+type bigIntSlice []*big.Int
+
+func (s bigIntSlice) Len() int           { return len(s) }
+func (s bigIntSlice) Less(i, j int) bool { return s[i].Cmp(s[j]) < 0 }
+func (s bigIntSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
+// ChecknPrimality checks whether number is a prime.
+func CheckPrimality(number *big.Int) bool {
+	return number.ProbablyPrime(0)
+}
+
+// displayPrimePretty displays successful prime generations nicely.
+func displayPrimePretty(number *big.Int, timeTaken time.Duration) {
+	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[4;30;42mSuccess\x1b[0m\t%s\x1b[0m\n",
+		number,
+		timeTaken,
+	)
+}
+
+// displayFailPretty displays failed prime generations nicely.
+func displayFailPretty(number *big.Int, timeTaken time.Duration) {
+	fmt.Printf("\033[1;93mTesting \033[0m\033[1;32m%s\033[0m\t\x1b[2;1;41mFail\x1b[0m\t%s\t\x1b[0m\n",
+		number,
+		timeTaken,
+	)
+}

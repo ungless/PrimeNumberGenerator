@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
 	app "github.com/urfave/cli"
 )
 
@@ -13,9 +14,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Fprintf(w, "userip: %q is not IP:port", r.RemoteAddr)
 	}
-
 	fmt.Printf("%s: Sending hash", port)
-	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
+	c := computation.GetNextComputation()
+	json, err := computation.GetJSON(c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(w, "%s", json)
 }
 
 func LaunchServer(c *app.Context) {
