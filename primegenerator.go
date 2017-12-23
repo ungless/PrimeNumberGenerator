@@ -14,6 +14,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/MaxTheMonster/PrimeNumberGenerator/client"
+	"github.com/MaxTheMonster/PrimeNumberGenerator/server"
 	"github.com/urfave/cli"
 )
 
@@ -291,6 +293,22 @@ func main() {
 				ComputePrimes(lastPrimeGenerated, true, true, big.NewInt(0))
 				return nil
 			},
+		},
+		{
+			Name:    "client",
+			Aliases: []string{"cl"},
+			Usage:   descClient,
+			Action:  client.LaunchClient,
+		},
+		{
+			Name:    "server",
+			Aliases: []string{"s"},
+			Usage:   descServer,
+			Before: func(c *cli.Context) error {
+				SetId()
+				return nil
+			},
+			Action: server.LaunchServer,
 		},
 	}
 	app.Run(os.Args)
