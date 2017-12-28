@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	version  = "0.5.5"
+	version  = "0.5.6"
 	appName  = "PrimeNumberGenerator"
 	appUsage = "Generate prime numbers forever"
 
@@ -33,6 +33,15 @@ const (
 	descRun       = "Begins computation of primes"
 	descClient    = "Launches a new instance of a client"
 	descServer    = "Launches a new instance of a server"
+
+	appHelpTemplate = `{{if .VisibleCommands}}COMMANDS:{{range .VisibleCategories}}{{if .Name}}
+   {{.Name}}:{{end}}{{range .VisibleCommands}}
+     {{join .Names ", "}}{{"\t"}}{{.Usage}}{{end}}{{end}}{{end}}{{if .VisibleFlags}}
+
+GLOBAL OPTIONS:
+   {{range $index, $option := .VisibleFlags}}{{if $index}}
+   {{end}}{{$option}}{{end}}{{end}}
+`
 )
 
 var mu sync.Mutex
@@ -202,6 +211,7 @@ func main() {
 	app.Name = appName
 	app.Usage = appUsage
 	app.Version = version
+	cli.AppHelpTemplate = appHelpTemplate
 
 	app.Commands = []cli.Command{
 		{
