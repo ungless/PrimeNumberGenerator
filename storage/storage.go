@@ -10,19 +10,24 @@ import (
 	"github.com/MaxTheMonster/PrimeNumberGenerator/config"
 )
 
+// FormatFilePath formats inputted filename to create a proper file path.
+func FormatFilePath(filename string) string {
+	return config.Base + filename + ".txt"
+}
+
 // createPrimesBase makes the base directory
 func createPrimesBase() {
 	log.Print("Creating base directory")
-	os.Mkdir(base, os.ModePerm)
+	os.Mkdir(config.Base, os.ModePerm)
 }
 
 // createDirectory creates the directory.txt file as defined
 // in settings.go
 func createDirectory() {
-	_, err := os.Create(directory)
+	_, err := os.Create(config.Directory)
 	if err != nil {
 		createPrimesBase()
-		_, err := os.Create(directory)
+		_, err := os.Create(config.Directory)
 		if err != nil {
 			panic(err)
 		}
@@ -32,10 +37,10 @@ func createDirectory() {
 // OpenDirectory returns an open os.File of the directory.txt
 // as defined in settings.go
 func OpenDirectory(flag int, perm os.FileMode) *os.File {
-	openDirectory, err := os.OpenFile(directory, flag, perm)
+	openDirectory, err := os.OpenFile(config.Directory, flag, perm)
 	if err != nil {
 		createDirectory()
-		openedCreatedDirectory, err := os.OpenFile(directory, flag, perm)
+		openedCreatedDirectory, err := os.OpenFile(config.Directory, flag, perm)
 		if err != nil {
 			panic(err)
 		}
@@ -65,7 +70,7 @@ func getLastFileWritten() string {
 // isNewFileNeeded() checks wether a new file is needed by asserting that
 // the id is divisible by maxFilesize - as defined in settings.go
 func isNewFileNeeded(id uint64) bool {
-	modulusIdAndMaxFilesize := big.NewInt(0).Mod(big.NewInt(int64(id)), big.NewInt(int64(maxFilesize)))
+	modulusIdAndMaxFilesize := big.NewInt(0).Mod(big.NewInt(int64(id)), big.NewInt(int64(config.MaxFilesize)))
 	divisibleByMaxFilesize := modulusIdAndMaxFilesize.Int64() == 0
 	return divisibleByMaxFilesize
 }
@@ -73,12 +78,12 @@ func isNewFileNeeded(id uint64) bool {
 // openLatestFile() returns an open os.File of the latest written to file
 func OpenLatestFile(flag int, perm os.FileMode) *os.File {
 	lastFileWritten := getLastFileWritten()
-	file, err := os.OpenFile(formatFilePath(lastFileWritten), flag, perm)
-	newFileNeeded := isNewFileNeeded(id)
+	file, err := os.OpenFile(FormatFilePath(lastFileWritten), flag, perm)
+	newFileNeeded := isNewFileNeeded(config.Id)
 	if err != nil || newFileNeeded {
-		newFileName := getNewFileName(id)
+		newFileName := getNewFileName(config.Id)
 		createNextFile(newFileName)
-		createdNextFile, err := os.OpenFile(formatFilePath(newFileName), flag, perm)
+		createdNextFile, err := os.OpenFile(FormatFilePath(newFileName), flag, perm)
 		if err != nil {
 			panic(err)
 		}
@@ -89,7 +94,7 @@ func OpenLatestFile(flag int, perm os.FileMode) *os.File {
 
 // getNextFileName() generates the name of the possible file
 func getNewFileName(id uint64) string {
-	nextFile := fmt.Sprintf("%d-%d", id, id+uint64(maxFilesize))
+	nextFile := fmt.Sprintf("%d-%d", id, id+uint64(config.MaxFilesize))
 	return nextFile
 }
 
@@ -100,7 +105,7 @@ func createNextFile(newFileName string) {
 	defer directory.Close()
 	directory.WriteString(newFileName + "\n")
 	log.Print("Creating next file. ", newFileName)
-	_, err := os.Create(formatFilePath(newFileName))
+	_, err := os.Create(FormatFilePath(newFileName))
 	if err != nil {
 		panic(err)
 	}

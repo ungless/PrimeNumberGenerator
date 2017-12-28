@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
-	"github.com/MaxTheMonster/PrimeNumberGenerator/id"
+	"github.com/MaxTheMonster/PrimeNumberGenerator/config"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/primes"
 	app "github.com/urfave/cli"
 )
@@ -67,7 +67,7 @@ func LaunchClient(c *app.Context) {
 				computationPrime := primes.Prime{
 					TimeTaken: time.Now().Sub(start),
 					Value:     i,
-					Id:        id.Id,
+					Id:        config.Id,
 				}
 				validComputations <- computation.Computation{computationPrime, c.Divisor, c.Hash}
 			} else {
