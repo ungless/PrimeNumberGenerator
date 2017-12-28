@@ -3,9 +3,6 @@ package config
 import (
 	"log"
 	"os"
-	"sync"
-
-	"github.com/MaxTheMonster/PrimeNumberGenerator/storage"
 )
 
 const (
@@ -16,13 +13,12 @@ const (
 	descConfigure = "Runs auto-configuration wizard"
 	descCount     = "Displays the estimated curren n prime numbers"
 	descRun       = "Begins computation of primes"
-
-	descClient = "Launches a new instance of a client"
-	descServer = "Launches a new instance of a server"
+	descClient    = "Launches a new instance of a client"
+	descServer    = "Launches a new instance of a server"
 )
 
 var (
-	home              = storage.GetUserHome()
+	home              = GetUserHome()
 	base              = home + "/.primes/"
 	directory         = base + "directory.txt"
 	configurationFile = home + "/.primegenerator.yaml"

@@ -15,9 +15,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"strconv"
 	"strings"
 
+	"github.com/MaxTheMonster/PrimeNumberGenerator/id"
 	"github.com/ghodss/yaml"
 )
 
@@ -35,6 +37,15 @@ type Config struct {
 	MaxFilesize   int    `json:"maxfilesize"`
 	MaxBufferSize int    `json:"maxbuffersize"`
 	ShowFails     bool   `json:"showfails"`
+}
+
+// GetUserHome returns the current user's home directory
+func GetUserHome() string {
+	currentUser, err := user.Current()
+	if err != nil {
+		logger.Fatal(err)
+	}
+	return currentUser.HomeDir
 }
 
 // GetUserConfig returns a Config object containing the user's configuration
@@ -230,6 +241,7 @@ func ensureConfigExists() {
 
 // SetConfiguration sets the global configuration variables
 func SetConfiguration() {
+	home = storage.GetUserHome()
 	config = GetUserConfig()
 	startingPrime = config.StartingPrime
 	maxFilesize = config.MaxFilesize

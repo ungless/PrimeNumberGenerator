@@ -1,10 +1,11 @@
-package id
+package primes
 
 import (
 	"bufio"
-	"github.com/MaxTheMonster/PrimeNumberGenerator/storage"
 	"io"
 	"os"
+
+	"github.com/MaxTheMonster/PrimeNumberGenerator/storage"
 )
 
 var Id uint64

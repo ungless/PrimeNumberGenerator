@@ -6,19 +6,9 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"os/user"
 
 	"github.com/MaxTheMonster/PrimeNumberGenerator/config"
 )
-
-// GetUserHome returns the current user's home directory
-func GetUserHome() string {
-	user, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	return user.HomeDir
-}
 
 // createPrimesBase makes the base directory
 func createPrimesBase() {
