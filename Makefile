@@ -1,6 +1,5 @@
 PROJECT_NAME := "PrimeNumberGenerator"
 PKG := "github.com/MaxTheMonster/$(PROJECT_NAME)"
-MAIN := "primegenerator/main.go"
 PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/)
 GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
 
@@ -21,7 +20,7 @@ dep: ## Get the dependencies
 	 @go get -v -d ./...
 
 build: dep ## Build the binary file
-	 @go build -o $(PROJECT_NAME) -i -v $(MAIN)
+	 @go build -o $(PROJECT_NAME) -i -v $(PKG)
 
 clean: ## Remove previous build
 	 @rm -f $(PROJECT_NAME)
