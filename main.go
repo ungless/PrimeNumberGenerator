@@ -19,11 +19,12 @@ import (
 	"github.com/MaxTheMonster/PrimeNumberGenerator/primes"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/server"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/storage"
+
 	"github.com/urfave/cli"
 )
 
 const (
-	version  = "0.5.4"
+	version  = "0.5.5"
 	appName  = "PrimeNumberGenerator"
 	appUsage = "Generate prime numbers forever"
 
