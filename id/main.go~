@@ -1,7 +1,0 @@
-package id
-
-import (
-	"fmt"
-)
-
-var id uint64
