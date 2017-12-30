@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"math/big"
 	"os"
 )
 
@@ -17,7 +18,8 @@ var (
 	MaxBufferSize int
 	ShowFails     bool
 
-	Id uint64
+	Id                 uint64
+	LastPrimeGenerated *big.Int
 
 	Logger = log.New(os.Stdout, "", log.LstdFlags)
 )

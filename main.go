@@ -4,17 +4,13 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
-	"io/ioutil"
+	//	"io/ioutil"
 	"math/big"
 	"os"
-	"sort"
-	"sync"
-	"sync/atomic"
-	"time"
 
 	"github.com/MaxTheMonster/PrimeNumberGenerator/client"
+	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/config"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/primes"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/server"
@@ -44,15 +40,6 @@ GLOBAL OPTIONS:
 `
 )
 
-var mu sync.Mutex
-var lastPrimeGenerated *big.Int
-
-type bigIntSlice []*big.Int
-
-func (s bigIntSlice) Len() int           { return len(s) }
-func (s bigIntSlice) Less(i, j int) bool { return s[i].Cmp(s[j]) < 0 }
-func (s bigIntSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-
 // SetConfiguration sets the global configuration variables
 func SetConfiguration() {
 	config.LocalConfig = config.GetUserConfig()
@@ -69,7 +56,7 @@ func SetId() {
 
 // SetLastPrimeGenerated sets the global lastprimegenerated variable
 func SetLastPrimeGenerated() {
-	lastPrimeGenerated = getLastPrime()
+	config.LastPrimeGenerated = getLastPrime()
 }
 
 // showHelp shows help to the user.
@@ -112,96 +99,8 @@ func getLastPrime() *big.Int {
 	return foundPrime
 }
 
-// convertPrimesToWritableFormat() takes a buffer of primes and converts them to a string
-// with each prime separated by a newline
-func convertPrimesToWritableFormat(buffer []*big.Int) string {
-	var formattedBuffer bytes.Buffer
-	for _, prime := range buffer {
-		formattedBuffer.WriteString(prime.String() + "\n")
-	}
-	return formattedBuffer.String()
-}
-
-// FlushBufferToFile() takes a buffer of primes and flushes them to the latest file
-func FlushBufferToFile(buffer bigIntSlice) {
-	mu.Lock()
-	defer mu.Unlock()
-	fmt.Println("Writing buffer....")
-	sort.Sort(buffer)
-	atomic.AddUint64(&config.Id, uint64(config.MaxBufferSize))
-
-	file := storage.OpenLatestFile(os.O_APPEND|os.O_WRONLY, 0600)
-	defer file.Close()
-	readableBuffer := convertPrimesToWritableFormat(buffer)
-
-	file.WriteString(readableBuffer)
-	fmt.Println("Finished writing buffer.")
-}
-
-// ComputePrimes computes primes concurrently until KeyboardInterrupt
-func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNumber *big.Int) {
-	numbersToCheck := make(chan *big.Int, 100)
-	validPrimes := make(chan primes.Prime, 100)
-	invalidPrimes := make(chan primes.Prime, 100)
-	var primeBuffer bigIntSlice
-
-	go func() {
-		if toInfinity {
-			for i := lastPrime; true; i.Add(i, big.NewInt(2)) {
-				numberToTest := big.NewInt(0).Set(i)
-				numbersToCheck <- numberToTest
-			}
-		} else {
-			for i := lastPrime; i.Cmp(maxNumber) == -1; i.Add(i, big.NewInt(2)) {
-				numberToTest := big.NewInt(0).Set(i)
-				numbersToCheck <- numberToTest
-			}
-		}
-	}()
-
-	go func() {
-		for elem := range validPrimes {
-			primeBuffer = append(primeBuffer, elem.Value)
-			if len(primeBuffer) == config.MaxBufferSize {
-				if writeToFile {
-					FlushBufferToFile(primeBuffer)
-				}
-				primeBuffer = nil
-			}
-			primes.DisplayPrimePretty(elem.Value, elem.TimeTaken)
-		}
-	}()
-
-	go func() {
-		for elem := range invalidPrimes {
-			if config.ShowFails == true {
-				primes.DisplayFailPretty(elem.Value, elem.TimeTaken)
-			}
-		}
-	}()
-
-	for i := range numbersToCheck {
-		go func(i *big.Int) {
-			start := time.Now()
-			isPrime := primes.CheckPrimality(i)
-			if isPrime == true {
-				validPrimes <- primes.Prime{
-					TimeTaken: time.Now().Sub(start),
-					Value:     i,
-					Id:        config.Id,
-				}
-			} else {
-				invalidPrimes <- primes.Prime{
-					TimeTaken: time.Now().Sub(start),
-					Value:     i,
-				}
-			}
-		}(i)
-	}
-}
-
 func init() {
-	config.Logger.SetOutput(ioutil.Discard)
+	//	config.Logger.SetOutput(ioutil.Discard)
 	showProgramDetails()
 	SetConfiguration()
 }
@@ -246,7 +145,7 @@ func main() {
 				return nil
 			},
 			Action: func(c *cli.Context) error {
-				ComputePrimes(lastPrimeGenerated, true, true, big.NewInt(0))
+				computation.ComputePrimes(config.LastPrimeGenerated, true, true, big.NewInt(0))
 				return nil
 			},
 		},
@@ -262,6 +161,7 @@ func main() {
 			Usage:   descServer,
 			Before: func(c *cli.Context) error {
 				SetId()
+				SetLastPrimeGenerated()
 				return nil
 			},
 			Action: server.LaunchServer,

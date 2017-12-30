@@ -2,13 +2,35 @@ package storage
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"log"
 	"math/big"
 	"os"
+	"sort"
+	"sync"
+	"sync/atomic"
 
 	"github.com/MaxTheMonster/PrimeNumberGenerator/config"
 )
+
+var mu sync.Mutex
+
+type BigIntSlice []*big.Int
+
+func (s BigIntSlice) Len() int           { return len(s) }
+func (s BigIntSlice) Less(i, j int) bool { return s[i].Cmp(s[j]) < 0 }
+func (s BigIntSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
+// convertPrimesToWritableFormat() takes a buffer of primes and converts them to a string
+// with each prime separated by a newline
+func convertPrimesToWritableFormat(buffer []*big.Int) string {
+	var formattedBuffer bytes.Buffer
+	for _, prime := range buffer {
+		formattedBuffer.WriteString(prime.String() + "\n")
+	}
+	return formattedBuffer.String()
+}
 
 // FormatFilePath formats inputted filename to create a proper file path.
 func FormatFilePath(filename string) string {
@@ -109,4 +131,20 @@ func createNextFile(newFileName string) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// FlushBufferToFile() takes a buffer of primes and flushes them to the latest file
+func FlushBufferToFile(buffer BigIntSlice) {
+	mu.Lock()
+	defer mu.Unlock()
+	fmt.Println("Writing buffer....")
+	sort.Sort(buffer)
+	atomic.AddUint64(&config.Id, uint64(config.MaxBufferSize))
+
+	file := OpenLatestFile(os.O_APPEND|os.O_WRONLY, 0600)
+	defer file.Close()
+	readableBuffer := convertPrimesToWritableFormat(buffer)
+
+	file.WriteString(readableBuffer)
+	fmt.Println("Finished writing buffer.")
 }
