@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"net"
@@ -15,18 +16,32 @@ import (
 	app "github.com/urfave/cli"
 )
 
-func readFromComputationsChannel() computation.Computation {
-	return computation.Computation{primes.Prime{1, big.NewInt(101), 1 * time.Second}, big.NewInt(3), false, 0 * time.Second, computation.GenerateUUID()}
+func receiveComputationHandler(w http.ResponseWriter, r *http.Request, computationsToPerform chan computation.Computation, validPrimes chan primes.Prime, invalidPrimes chan primes.Prime) {
+	decoder := json.NewDecoder(r.Body)
+	var c computation.Computation
+	err := decoder.Decode(&c)
+	if err != nil {
+		config.Logger.Fatal(err)
+	}
+	defer r.Body.Close()
+	config.Logger.Print("Received: ", c)
+	config.Logger.Print(len(computationsToPerform), c.ComputationId)
+	if c.IsValid {
+		invalidPrimes <- c.Prime
+	} else if len(computationsToPerform) == 0 {
+		validPrimes <- c.Prime
+	}
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func assignComputationHandler(w http.ResponseWriter, r *http.Request, computationsToPerform chan computation.Computation) {
 	_, port, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		fmt.Fprintf(w, "userip: %q is not IP:port", r.RemoteAddr)
 	}
 	fmt.Printf("%s: Sending computation\n", port)
 
-	c := readFromComputationsChannel()
+	c := <-computationsToPerform
+	fmt.Println(c)
 	json, err := computation.GetJSONFromComputation(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -40,6 +55,7 @@ func LaunchServer(c *app.Context) {
 	numbersToCheck := make(chan *big.Int, 100)
 	validPrimes := make(chan primes.Prime, 100)
 	invalidPrimes := make(chan primes.Prime, 100)
+	computationsToPerform := make(chan computation.Computation)
 	var primeBuffer storage.BigIntSlice
 
 	go func() {
@@ -51,11 +67,14 @@ func LaunchServer(c *app.Context) {
 
 	go func() {
 		for elem := range validPrimes {
+			primes.DisplayPrimePretty(elem.Value, elem.TimeTaken)
 			if len(primeBuffer) == 1 {
 				storage.FlushBufferToFile(primeBuffer)
 				primeBuffer = nil
 			}
-			primes.DisplayPrimePretty(elem.Value, elem.TimeTaken)
+			for len(computationsToPerform) > 0 {
+				<-computationsToPerform
+			}
 		}
 	}()
 
@@ -69,14 +88,19 @@ func LaunchServer(c *app.Context) {
 
 	go func() {
 		for i := range numbersToCheck {
-			computationsToPerform := make(chan computation.Computation)
 			currentSolvingPrime := primes.Prime{
 				TimeTaken: 0 * time.Second,
 				Value:     i,
 			}
-			go computation.GetComputationsToPerform(currentSolvingPrime, computationsToPerform)
+			computation.GetComputationsToPerform(currentSolvingPrime, computationsToPerform)
 		}
 	}()
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		assignComputationHandler(w, r, computationsToPerform)
+	})
+	http.HandleFunc("/finished", func(w http.ResponseWriter, r *http.Request) {
+		receiveComputationHandler(w, r, computationsToPerform, validPrimes, invalidPrimes)
+	})
+
 	http.ListenAndServe(":8080", nil)
 }

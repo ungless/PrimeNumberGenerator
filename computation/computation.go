@@ -12,11 +12,12 @@ import (
 )
 
 type Computation struct {
-	Prime     primes.Prime
-	Divisor   *big.Int
-	IsValid   bool
-	TimeTaken time.Duration
-	Hash      uuid.UUID
+	Prime         primes.Prime
+	Divisor       *big.Int
+	IsValid       bool
+	TimeTaken     time.Duration
+	ComputationId *big.Int
+	Hash          uuid.UUID
 }
 
 func GetJSONFromComputation(c Computation) ([]byte, error) {
@@ -29,9 +30,9 @@ func GenerateUUID() uuid.UUID {
 	return u
 }
 
-func getComputation(prime primes.Prime, divisor *big.Int) Computation {
+func getComputation(prime primes.Prime, divisor *big.Int, computationId *big.Int) Computation {
 	nextUUID := GenerateUUID()
-	return Computation{prime, divisor, false, 0 * time.Second, nextUUID}
+	return Computation{prime, divisor, false, 0 * time.Second, computationId, nextUUID}
 }
 
 // ComputePrimes computes primes concurrently until KeyboardInterrupt
@@ -108,19 +109,29 @@ func RunDistributedComputation(c Computation) bool {
 	return computationIsValid
 }
 
-func getDivisorsOfPrime(i *big.Int) []*big.Int {
-	var divisorsOfPrime []*big.Int
+// getDivisorsOfPrime returns a slice containing all good divisors of a prime
+func getDivisorsOfPrime(i *big.Int) storage.BigIntSlice {
+	var divisorsOfPrime storage.BigIntSlice
 	squareRoot := big.NewInt(0).Sqrt(i)
 	for n := big.NewInt(3); n.Cmp(squareRoot) == -1; n.Add(n, big.NewInt(2)) {
-		divisorsOfPrime = append(divisorsOfPrime, n)
+		divisor := new(big.Int).Set(n)
+		divisorsOfPrime = append(divisorsOfPrime, divisor)
 	}
+	config.Logger.Print(divisorsOfPrime)
 	return divisorsOfPrime
 }
 
+// GetComputationsToPerform passes all computations needed to be performed to a channel
 func GetComputationsToPerform(prime primes.Prime, computationsToPerform chan Computation) {
+	config.Logger.Print("Getting computations to perform for", prime)
+	config.Logger.Print("Getting divisors")
 	divisors := getDivisorsOfPrime(prime.Value)
-	for _, v := range divisors {
-		nextComputation := getComputation(prime, v)
+	config.Logger.Print("Finished getting divisors: ")
+	for i, v := range divisors {
+		computationId := big.NewInt(int64(i))
+		nextComputation := getComputation(prime, v, computationId)
+		config.Logger.Println(nextComputation, v)
 		computationsToPerform <- nextComputation
 	}
+
 }

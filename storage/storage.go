@@ -89,7 +89,7 @@ func getLastFileWritten() string {
 	return latestFile
 }
 
-// isNewFileNeeded() checks wether a new file is needed by asserting that
+// isNewFileNeeded() checks whether a new file is needed by asserting that
 // the id is divisible by maxFilesize - as defined in settings.go
 func isNewFileNeeded(id uint64) bool {
 	modulusIdAndMaxFilesize := big.NewInt(0).Mod(big.NewInt(int64(id)), big.NewInt(int64(config.MaxFilesize)))

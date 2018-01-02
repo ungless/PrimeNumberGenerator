@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -15,6 +16,33 @@ import (
 	app "github.com/urfave/cli"
 )
 
+// sendComputationResult sends a JSON string through POST to the server
+// of the results of a computation
+func sendComputationResult(c computation.Computation) {
+	url := "http://localhost:8080/finished"
+
+	json, err := computation.GetJSONFromComputation(c)
+	if err != nil {
+		config.Logger.Fatal(err)
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		config.Logger.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+
+}
+
+// getUnMarshalledComputation produces a computation from a JSON string
 func getUnMarshalledComputation(body string) computation.Computation {
 	var c computation.Computation
 	err := json.Unmarshal([]byte(body), &c)
@@ -48,9 +76,9 @@ func LaunchClient(c *app.Context) {
 	invalidComputations := make(chan computation.Computation, 10)
 	go func() {
 		for {
-			time.Sleep(1 * time.Second)
 			nextComputation, err := fetchNextComputationToPerform()
 			if err != nil {
+				time.Sleep(1 * time.Second)
 				log.Print("Retrying connection")
 				continue
 			}
@@ -62,6 +90,8 @@ func LaunchClient(c *app.Context) {
 	go func() {
 		for c := range validComputations {
 			config.Logger.Printf("%s / %s valid.", c.Prime.Value, c.Divisor)
+			sendComputationResult(c)
+			config.Logger.Fatal()
 		}
 	}()
 
