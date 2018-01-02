@@ -25,6 +25,7 @@ func sendComputationResult(c computation.Computation) {
 	if err != nil {
 		config.Logger.Fatal(err)
 	}
+	config.Logger.Print("Sending JSON: ", string(json))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -39,7 +40,6 @@ func sendComputationResult(c computation.Computation) {
 	fmt.Println("response Headers:", resp.Header)
 	body, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println("response Body:", string(body))
-
 }
 
 // getUnMarshalledComputation produces a computation from a JSON string
@@ -98,13 +98,13 @@ func LaunchClient(c *app.Context) {
 	go func() {
 		for c := range invalidComputations {
 			config.Logger.Printf("%s / %s invalid.", c.Prime.Value, c.Divisor)
+			sendComputationResult(c)
 		}
 	}()
 
 	for c := range computationsToPerform {
 		i := c.Prime.Value
 		go func(i *big.Int, c computation.Computation) {
-			fmt.Println(c)
 			start := time.Now()
 			fmt.Println("Computing")
 			computationIsValid := computation.RunDistributedComputation(c)

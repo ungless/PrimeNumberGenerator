@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
@@ -16,7 +17,11 @@ import (
 	app "github.com/urfave/cli"
 )
 
+var lock sync.Mutex
+
 func receiveComputationHandler(w http.ResponseWriter, r *http.Request, computationsToPerform chan computation.Computation, validPrimes chan primes.Prime, invalidPrimes chan primes.Prime) {
+	lock.Lock()
+	defer lock.Unlock()
 	decoder := json.NewDecoder(r.Body)
 	var c computation.Computation
 	err := decoder.Decode(&c)
@@ -72,15 +77,12 @@ func LaunchServer(c *app.Context) {
 				storage.FlushBufferToFile(primeBuffer)
 				primeBuffer = nil
 			}
-			for len(computationsToPerform) > 0 {
-				<-computationsToPerform
-			}
 		}
 	}()
 
 	go func() {
 		for elem := range invalidPrimes {
-			if config.ShowFails == true {
+			if config.ShowFails == false {
 				primes.DisplayFailPretty(elem.Value, elem.TimeTaken)
 			}
 		}

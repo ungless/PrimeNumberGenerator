@@ -32,7 +32,8 @@ func GenerateUUID() uuid.UUID {
 
 func getComputation(prime primes.Prime, divisor *big.Int, computationId *big.Int) Computation {
 	nextUUID := GenerateUUID()
-	return Computation{prime, divisor, false, 0 * time.Second, computationId, nextUUID}
+	computationStruct := Computation{prime, divisor, false, 0 * time.Second, computationId, nextUUID}
+	return computationStruct
 }
 
 // ComputePrimes computes primes concurrently until KeyboardInterrupt
@@ -117,21 +118,17 @@ func getDivisorsOfPrime(i *big.Int) storage.BigIntSlice {
 		divisor := new(big.Int).Set(n)
 		divisorsOfPrime = append(divisorsOfPrime, divisor)
 	}
-	config.Logger.Print(divisorsOfPrime)
 	return divisorsOfPrime
 }
 
 // GetComputationsToPerform passes all computations needed to be performed to a channel
 func GetComputationsToPerform(prime primes.Prime, computationsToPerform chan Computation) {
-	config.Logger.Print("Getting computations to perform for", prime)
-	config.Logger.Print("Getting divisors")
 	divisors := getDivisorsOfPrime(prime.Value)
-	config.Logger.Print("Finished getting divisors: ")
+	//	config.Logger.Print(divisors)
 	for i, v := range divisors {
 		computationId := big.NewInt(int64(i))
 		nextComputation := getComputation(prime, v, computationId)
-		config.Logger.Println(nextComputation, v)
+		config.Logger.Print(nextComputation)
 		computationsToPerform <- nextComputation
 	}
-
 }
