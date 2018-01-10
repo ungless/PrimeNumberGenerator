@@ -18,6 +18,11 @@ var (
 	MaxBufferSize int
 	ShowFails     bool
 
+	Address         = "localhost"
+	Port            = "8080"
+	AssignmentPoint = "/"
+	ReturnPoint     = "/finished"
+
 	Id                 uint64
 	LastPrimeGenerated *big.Int
 

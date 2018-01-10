@@ -18,12 +18,11 @@ import (
 // sendComputationResult sends a JSON string through POST to the server
 // of the results of a computation
 func sendComputationResult(c computation.Computation) {
-	url := "http://localhost:8080/finished"
+	url := "http://" + config.Address + ":" + config.Port + config.ReturnPoint
 	json, err := computation.GetJSONFromComputation(c)
 	if err != nil {
 		config.Logger.Fatal(err)
 	}
-	//	config.Logger.Print("Sending JSON: ", string(json))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -48,7 +47,8 @@ func getUnMarshalledComputation(body string) computation.Computation {
 // getNextComputation returns a computation hash given by
 // the server
 func fetchNextComputationToPerform() (computation.Computation, error) {
-	resp, err := http.Get("http://localhost:8080")
+	url := "http://" + config.Address + ":" + config.Port + config.AssignmentPoint
+	resp, err := http.Get(url)
 	if err != nil {
 		log.Print("Cannot connect to server")
 		return computation.Computation{}, err

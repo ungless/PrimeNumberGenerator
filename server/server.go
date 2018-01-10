@@ -30,7 +30,6 @@ func receiveComputationHandler(w http.ResponseWriter, r *http.Request, computati
 	}
 	defer r.Body.Close()
 	computationsReceived <- c
-	config.Logger.Print("Received: ", c)
 }
 
 func assignComputationHandler(w http.ResponseWriter, r *http.Request, c computation.Computation) {
@@ -95,9 +94,9 @@ func LaunchServer(c *app.Context) {
 			nOfComputationsForPrime = new(big.Int).Sub(big.NewInt(int64(len(currentComputationsToPerform))), big.NewInt(1))
 			fmt.Println(nOfComputationsForPrime)
 			for _, c := range currentComputationsToPerform {
-				//                              fmt.Println(c)
 				computationsToBeSent <- c
 			}
+			config.Logger.Print("PRIIIIIIIIIIIIIIIIIIIIIIIIME")
 		}
 	}()
 
@@ -111,12 +110,12 @@ func LaunchServer(c *app.Context) {
 		}
 	}()
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(config.AssignmentPoint, func(w http.ResponseWriter, r *http.Request) {
 		c := <-computationsToBeSent
 		assignComputationHandler(w, r, c)
 	})
 
-	http.HandleFunc("/finished", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(config.ReturnPoint, func(w http.ResponseWriter, r *http.Request) {
 		receiveComputationHandler(w, r, computationsReceived)
 	})
 

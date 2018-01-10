@@ -128,6 +128,7 @@ func GetComputationsToPerform(prime primes.Prime) []Computation {
 	for i, v := range divisors {
 		computationId := big.NewInt(int64(i))
 		nextComputation := getComputation(prime, v, computationId)
+		config.Logger.Println(nextComputation)
 		computations = append(computations, nextComputation)
 	}
 	return computations
