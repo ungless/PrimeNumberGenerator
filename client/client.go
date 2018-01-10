@@ -3,7 +3,6 @@ package client
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -20,12 +19,11 @@ import (
 // of the results of a computation
 func sendComputationResult(c computation.Computation) {
 	url := "http://localhost:8080/finished"
-
 	json, err := computation.GetJSONFromComputation(c)
 	if err != nil {
 		config.Logger.Fatal(err)
 	}
-	config.Logger.Print("Sending JSON: ", string(json))
+	//	config.Logger.Print("Sending JSON: ", string(json))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -35,11 +33,6 @@ func sendComputationResult(c computation.Computation) {
 		config.Logger.Fatal(err)
 	}
 	defer resp.Body.Close()
-
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
 }
 
 // getUnMarshalledComputation produces a computation from a JSON string
@@ -55,7 +48,6 @@ func getUnMarshalledComputation(body string) computation.Computation {
 // getNextComputation returns a computation hash given by
 // the server
 func fetchNextComputationToPerform() (computation.Computation, error) {
-	log.Print("Requesting next computation")
 	resp, err := http.Get("http://localhost:8080")
 	if err != nil {
 		log.Print("Cannot connect to server")
@@ -63,7 +55,6 @@ func fetchNextComputationToPerform() (computation.Computation, error) {
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	log.Print("Found computation")
 	computation := getUnMarshalledComputation(string(body))
 	return computation, nil
 }
@@ -82,7 +73,6 @@ func LaunchClient(c *app.Context) {
 				log.Print("Retrying connection")
 				continue
 			}
-			fmt.Println("Passing computation to computationsToPerform")
 			computationsToPerform <- nextComputation
 		}
 	}()
@@ -91,13 +81,13 @@ func LaunchClient(c *app.Context) {
 		for c := range validComputations {
 			config.Logger.Printf("%s / %s valid.", c.Prime.Value, c.Divisor)
 			sendComputationResult(c)
-			config.Logger.Fatal()
 		}
 	}()
 
 	go func() {
 		for c := range invalidComputations {
 			config.Logger.Printf("%s / %s invalid.", c.Prime.Value, c.Divisor)
+
 			sendComputationResult(c)
 		}
 	}()
@@ -106,9 +96,7 @@ func LaunchClient(c *app.Context) {
 		i := c.Prime.Value
 		go func(i *big.Int, c computation.Computation) {
 			start := time.Now()
-			fmt.Println("Computing")
 			computationIsValid := computation.RunDistributedComputation(c)
-			fmt.Println("Finished computation:", computationIsValid)
 			duration := time.Now().Sub(start)
 			newPrimeDuration := c.Prime.TimeTaken + duration
 			if computationIsValid == true {
@@ -118,11 +106,12 @@ func LaunchClient(c *app.Context) {
 					Id:        config.Id,
 				}
 				validComputations <- computation.Computation{
-					Prime:     computationPrime,
-					Divisor:   c.Divisor,
-					IsValid:   computationIsValid,
-					TimeTaken: duration,
-					Hash:      c.Hash,
+					Prime:         computationPrime,
+					Divisor:       c.Divisor,
+					IsValid:       computationIsValid,
+					TimeTaken:     duration,
+					ComputationId: c.ComputationId,
+					Hash:          c.Hash,
 				}
 			} else {
 				computationPrime := primes.Prime{
@@ -130,11 +119,12 @@ func LaunchClient(c *app.Context) {
 					Value:     i,
 				}
 				invalidComputations <- computation.Computation{
-					Prime:     computationPrime,
-					Divisor:   c.Divisor,
-					IsValid:   computationIsValid,
-					TimeTaken: duration,
-					Hash:      c.Hash,
+					Prime:         computationPrime,
+					Divisor:       c.Divisor,
+					IsValid:       computationIsValid,
+					TimeTaken:     duration,
+					ComputationId: c.ComputationId,
+					Hash:          c.Hash,
 				}
 			}
 		}(i, c)

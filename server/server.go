@@ -19,7 +19,7 @@ import (
 
 var lock sync.Mutex
 
-func receiveComputationHandler(w http.ResponseWriter, r *http.Request, computationsToPerform chan computation.Computation, validPrimes chan primes.Prime, invalidPrimes chan primes.Prime) {
+func receiveComputationHandler(w http.ResponseWriter, r *http.Request, computationsReceived chan computation.Computation) {
 	lock.Lock()
 	defer lock.Unlock()
 	decoder := json.NewDecoder(r.Body)
@@ -29,24 +29,16 @@ func receiveComputationHandler(w http.ResponseWriter, r *http.Request, computati
 		config.Logger.Fatal(err)
 	}
 	defer r.Body.Close()
+	computationsReceived <- c
 	config.Logger.Print("Received: ", c)
-	config.Logger.Print(len(computationsToPerform), c.ComputationId)
-	if c.IsValid {
-		invalidPrimes <- c.Prime
-	} else if len(computationsToPerform) == 0 {
-		validPrimes <- c.Prime
-	}
 }
 
-func assignComputationHandler(w http.ResponseWriter, r *http.Request, computationsToPerform chan computation.Computation) {
-	_, port, err := net.SplitHostPort(r.RemoteAddr)
+func assignComputationHandler(w http.ResponseWriter, r *http.Request, c computation.Computation) {
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		fmt.Fprintf(w, "userip: %q is not IP:port", r.RemoteAddr)
 	}
-	fmt.Printf("%s: Sending computation\n", port)
-
-	c := <-computationsToPerform
-	fmt.Println(c)
+	config.Logger.Printf("Sending %v to %s\n", c, ip)
 	json, err := computation.GetJSONFromComputation(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -60,30 +52,35 @@ func LaunchServer(c *app.Context) {
 	numbersToCheck := make(chan *big.Int, 100)
 	validPrimes := make(chan primes.Prime, 100)
 	invalidPrimes := make(chan primes.Prime, 100)
-	computationsToPerform := make(chan computation.Computation)
+	computationsToBeSent := make(chan computation.Computation)
+	computationsReceived := make(chan computation.Computation)
+
+	nOfComputationsForPrime := new(big.Int)
 	var primeBuffer storage.BigIntSlice
 
 	go func() {
-		for i := config.LastPrimeGenerated; true; i.Add(i, big.NewInt(2)) {
+		for i := new(big.Int).Add(config.LastPrimeGenerated, big.NewInt(2)); true; i.Add(i, big.NewInt(2)) {
 			numberToTest := big.NewInt(0).Set(i)
 			numbersToCheck <- numberToTest
 		}
 	}()
 
 	go func() {
-		for elem := range validPrimes {
-			primes.DisplayPrimePretty(elem.Value, elem.TimeTaken)
+		for p := range validPrimes {
+			primes.DisplayPrimePretty(p.Value, p.TimeTaken)
+			primeBuffer = append(primeBuffer, p.Value)
 			if len(primeBuffer) == 1 {
 				storage.FlushBufferToFile(primeBuffer)
 				primeBuffer = nil
 			}
+
 		}
 	}()
 
 	go func() {
-		for elem := range invalidPrimes {
+		for p := range invalidPrimes {
 			if config.ShowFails == false {
-				primes.DisplayFailPretty(elem.Value, elem.TimeTaken)
+				primes.DisplayFailPretty(p.Value, p.TimeTaken)
 			}
 		}
 	}()
@@ -94,14 +91,33 @@ func LaunchServer(c *app.Context) {
 				TimeTaken: 0 * time.Second,
 				Value:     i,
 			}
-			computation.GetComputationsToPerform(currentSolvingPrime, computationsToPerform)
+			currentComputationsToPerform := computation.GetComputationsToPerform(currentSolvingPrime)
+			nOfComputationsForPrime = new(big.Int).Sub(big.NewInt(int64(len(currentComputationsToPerform))), big.NewInt(1))
+			fmt.Println(nOfComputationsForPrime)
+			for _, c := range currentComputationsToPerform {
+				//                              fmt.Println(c)
+				computationsToBeSent <- c
+			}
 		}
 	}()
+
+	go func() {
+		for c := range computationsReceived {
+			if c.IsValid {
+				invalidPrimes <- c.Prime
+			} else if nOfComputationsForPrime.Cmp(c.ComputationId) == 0 {
+				validPrimes <- c.Prime
+			}
+		}
+	}()
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		assignComputationHandler(w, r, computationsToPerform)
+		c := <-computationsToBeSent
+		assignComputationHandler(w, r, c)
 	})
+
 	http.HandleFunc("/finished", func(w http.ResponseWriter, r *http.Request) {
-		receiveComputationHandler(w, r, computationsToPerform, validPrimes, invalidPrimes)
+		receiveComputationHandler(w, r, computationsReceived)
 	})
 
 	http.ListenAndServe(":8080", nil)

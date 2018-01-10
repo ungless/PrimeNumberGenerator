@@ -100,6 +100,7 @@ func isNewFileNeeded(id uint64) bool {
 // openLatestFile() returns an open os.File of the latest written to file
 func OpenLatestFile(flag int, perm os.FileMode) *os.File {
 	lastFileWritten := getLastFileWritten()
+
 	file, err := os.OpenFile(FormatFilePath(lastFileWritten), flag, perm)
 	newFileNeeded := isNewFileNeeded(config.Id)
 	if err != nil || newFileNeeded {

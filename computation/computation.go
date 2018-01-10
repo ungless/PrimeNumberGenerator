@@ -122,13 +122,13 @@ func getDivisorsOfPrime(i *big.Int) storage.BigIntSlice {
 }
 
 // GetComputationsToPerform passes all computations needed to be performed to a channel
-func GetComputationsToPerform(prime primes.Prime, computationsToPerform chan Computation) {
+func GetComputationsToPerform(prime primes.Prime) []Computation {
+	var computations []Computation
 	divisors := getDivisorsOfPrime(prime.Value)
-	//	config.Logger.Print(divisors)
 	for i, v := range divisors {
 		computationId := big.NewInt(int64(i))
 		nextComputation := getComputation(prime, v, computationId)
-		config.Logger.Print(nextComputation)
-		computationsToPerform <- nextComputation
+		computations = append(computations, nextComputation)
 	}
+	return computations
 }
