@@ -78,7 +78,7 @@ func LaunchServer(c *app.Context) {
 
 	go func() {
 		for p := range invalidPrimes {
-			if config.ShowFails == false {
+			if config.ShowFails == true {
 				primes.DisplayFailPretty(p.Value, p.TimeTaken)
 			}
 		}
