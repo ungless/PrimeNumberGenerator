@@ -18,8 +18,9 @@ var (
 	MaxBufferSize int
 	ShowFails     bool
 
-	Address         = "localhost"
+	Host            = "192.168.1.66"
 	Port            = "8080"
+	Address         = Host + ":" + Port
 	AssignmentPoint = "/"
 	ReturnPoint     = "/finished"
 
