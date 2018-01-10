@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
+	//	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/config"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/primes"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/storage"
@@ -19,26 +19,26 @@ import (
 
 var lock sync.Mutex
 
-func receiveComputationHandler(w http.ResponseWriter, r *http.Request, computationsReceived chan computation.Computation) {
+func receivePrimeHandler(w http.ResponseWriter, r *http.Request, primesReceived chan primes.Prime) {
 	lock.Lock()
 	defer lock.Unlock()
 	decoder := json.NewDecoder(r.Body)
-	var c computation.Computation
-	err := decoder.Decode(&c)
+	var p primes.Prime
+	err := decoder.Decode(&p)
 	if err != nil {
 		config.Logger.Fatal(err)
 	}
 	defer r.Body.Close()
-	computationsReceived <- c
+	primesReceived <- p
 }
 
-func assignComputationHandler(w http.ResponseWriter, r *http.Request, c computation.Computation) {
+func assignPrimeHandler(w http.ResponseWriter, r *http.Request, p primes.Prime) {
 	ip, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		fmt.Fprintf(w, "userip: %q is not IP:port", r.RemoteAddr)
 	}
-	config.Logger.Printf("Sending %v to %s\n", c, ip)
-	json, err := computation.GetJSONFromComputation(c)
+	config.Logger.Printf("Sending %v to %s\n", p, ip)
+	json, err := json.Marshal(p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -48,13 +48,12 @@ func assignComputationHandler(w http.ResponseWriter, r *http.Request, c computat
 
 func LaunchServer(c *app.Context) {
 	go fmt.Println("Launching server on port 8080...")
-	numbersToCheck := make(chan *big.Int, 100)
+	numbersToCheck := make(chan *big.Int)
 	validPrimes := make(chan primes.Prime, 100)
 	invalidPrimes := make(chan primes.Prime, 100)
-	computationsToBeSent := make(chan computation.Computation)
-	computationsReceived := make(chan computation.Computation)
+	primesToBeSent := make(chan primes.Prime)
+	primesReceived := make(chan primes.Prime)
 
-	nOfComputationsForPrime := new(big.Int)
 	var primeBuffer storage.BigIntSlice
 
 	go func() {
@@ -68,7 +67,7 @@ func LaunchServer(c *app.Context) {
 		for p := range validPrimes {
 			primes.DisplayPrimePretty(p.Value, p.TimeTaken)
 			primeBuffer = append(primeBuffer, p.Value)
-			if len(primeBuffer) == 1 {
+			if len(primeBuffer) == config.MaxBufferSize {
 				storage.FlushBufferToFile(primeBuffer)
 				primeBuffer = nil
 			}
@@ -78,7 +77,7 @@ func LaunchServer(c *app.Context) {
 
 	go func() {
 		for p := range invalidPrimes {
-			if config.ShowFails == false {
+			if config.ShowFails == true {
 				primes.DisplayFailPretty(p.Value, p.TimeTaken)
 			}
 		}
@@ -86,38 +85,33 @@ func LaunchServer(c *app.Context) {
 
 	go func() {
 		for i := range numbersToCheck {
-			currentSolvingPrime := primes.Prime{
+			primeToCheck := primes.Prime{
 				TimeTaken: 0 * time.Second,
 				Value:     i,
+				IsValid:   false,
 			}
-			currentComputationsToPerform := computation.GetComputationsToPerform(currentSolvingPrime)
-			nOfComputationsForPrime = new(big.Int).Sub(big.NewInt(int64(len(currentComputationsToPerform))), big.NewInt(1))
-			fmt.Println(nOfComputationsForPrime)
-			for _, c := range currentComputationsToPerform {
-				computationsToBeSent <- c
-			}
-			config.Logger.Print("PRIIIIIIIIIIIIIIIIIIIIIIIIME")
+			primesToBeSent <- primeToCheck
 		}
 	}()
 
 	go func() {
-		for c := range computationsReceived {
-			if c.IsValid {
-				invalidPrimes <- c.Prime
-			} else if nOfComputationsForPrime.Cmp(c.ComputationId) == 0 {
-				validPrimes <- c.Prime
+		for p := range primesReceived {
+			if p.IsValid {
+				validPrimes <- p
+			} else {
+				invalidPrimes <- p
 			}
 		}
 	}()
 
 	http.HandleFunc(config.AssignmentPoint, func(w http.ResponseWriter, r *http.Request) {
-		c := <-computationsToBeSent
-		assignComputationHandler(w, r, c)
+		p := <-primesToBeSent
+		assignPrimeHandler(w, r, p)
 	})
 
 	http.HandleFunc(config.ReturnPoint, func(w http.ResponseWriter, r *http.Request) {
-		receiveComputationHandler(w, r, computationsReceived)
+		receivePrimeHandler(w, r, primesReceived)
 	})
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":"+config.Port, nil)
 }

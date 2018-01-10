@@ -10,6 +10,7 @@ type Prime struct {
 	Id        uint64
 	Value     *big.Int
 	TimeTaken time.Duration
+	IsValid   bool
 }
 
 // ChecknPrimality checks whether number is a prime.

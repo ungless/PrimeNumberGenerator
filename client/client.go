@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
+	//	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/config"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/primes"
 	app "github.com/urfave/cli"
@@ -17,9 +17,9 @@ import (
 
 // sendComputationResult sends a JSON string through POST to the server
 // of the results of a computation
-func sendComputationResult(c computation.Computation) {
+func sendPrimeResult(p primes.Prime) {
 	url := "http://" + config.Address + config.ReturnPoint
-	json, err := computation.GetJSONFromComputation(c)
+	json, err := json.Marshal(p)
 	if err != nil {
 		config.Logger.Fatal(err)
 	}
@@ -34,9 +34,9 @@ func sendComputationResult(c computation.Computation) {
 	defer resp.Body.Close()
 }
 
-// getUnMarshalledComputation produces a computation from a JSON string
-func getUnMarshalledComputation(body string) computation.Computation {
-	var c computation.Computation
+// getUnMarshalledPrime produces a computation from a JSON string
+func getUnMarshalledPrime(body string) primes.Prime {
+	var c primes.Prime
 	err := json.Unmarshal([]byte(body), &c)
 	if err != nil {
 		log.Fatal(err)
@@ -44,88 +44,65 @@ func getUnMarshalledComputation(body string) computation.Computation {
 	return c
 }
 
-// getNextComputation returns a computation hash given by
+// fetchNextPrimeToPerform returns a computation hash given by
 // the server
-func fetchNextComputationToPerform() (computation.Computation, error) {
+func fetchNextPrimeToPerform() (primes.Prime, error) {
 	url := "http://" + config.Address + config.AssignmentPoint
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Print("Cannot connect to server")
-		return computation.Computation{}, err
+		return primes.Prime{}, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	computation := getUnMarshalledComputation(string(body))
+	computation := getUnMarshalledPrime(string(body))
 	return computation, nil
 }
 
 // LaunchClient launches the client application, and manages
 // goroutines
 func LaunchClient(c *app.Context) {
-	computationsToPerform := make(chan computation.Computation, 10)
-	validComputations := make(chan computation.Computation, 10)
-	invalidComputations := make(chan computation.Computation, 10)
+	primesToCompute := make(chan primes.Prime, 10)
+	validPrimes := make(chan primes.Prime, 10)
+	invalidPrimes := make(chan primes.Prime, 10)
 	go func() {
 		for {
-			nextComputation, err := fetchNextComputationToPerform()
+			nextPrime, err := fetchNextPrimeToPerform()
 			if err != nil {
 				time.Sleep(1 * time.Second)
 				log.Print("Retrying connection")
 				continue
 			}
-			computationsToPerform <- nextComputation
+			primesToCompute <- nextPrime
 		}
 	}()
 
 	go func() {
-		for c := range validComputations {
-			config.Logger.Printf("%s / %s valid.", c.Prime.Value, c.Divisor)
-			sendComputationResult(c)
+		for p := range validPrimes {
+			primes.DisplayPrimePretty(p.Value, p.TimeTaken)
+			sendPrimeResult(p)
 		}
 	}()
 
 	go func() {
-		for c := range invalidComputations {
-			config.Logger.Printf("%s / %s invalid.", c.Prime.Value, c.Divisor)
-			sendComputationResult(c)
+		for p := range invalidPrimes {
+			primes.DisplayFailPretty(p.Value, p.TimeTaken)
+			sendPrimeResult(p)
 		}
 	}()
 
-	for c := range computationsToPerform {
-		i := c.Prime.Value
-		go func(i *big.Int, c computation.Computation) {
+	for p := range primesToCompute {
+		i := p.Value
+		go func(i *big.Int, p primes.Prime) {
 			start := time.Now()
-			computationIsValid := computation.RunDistributedComputation(c)
+			p.IsValid = primes.CheckPrimality(i)
 			duration := time.Now().Sub(start)
-			newPrimeDuration := c.Prime.TimeTaken + duration
-			if computationIsValid == true {
-				computationPrime := primes.Prime{
-					TimeTaken: newPrimeDuration,
-					Value:     i,
-					Id:        config.Id,
-				}
-				validComputations <- computation.Computation{
-					Prime:         computationPrime,
-					Divisor:       c.Divisor,
-					IsValid:       computationIsValid,
-					TimeTaken:     duration,
-					ComputationId: c.ComputationId,
-					Hash:          c.Hash,
-				}
+			p.TimeTaken = duration
+			if p.IsValid == true {
+				validPrimes <- p
 			} else {
-				computationPrime := primes.Prime{
-					TimeTaken: newPrimeDuration,
-					Value:     i,
-				}
-				invalidComputations <- computation.Computation{
-					Prime:         computationPrime,
-					Divisor:       c.Divisor,
-					IsValid:       computationIsValid,
-					TimeTaken:     duration,
-					ComputationId: c.ComputationId,
-					Hash:          c.Hash,
-				}
+				invalidPrimes <- p
 			}
-		}(i, c)
+		}(i, p)
 	}
 }

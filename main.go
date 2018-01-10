@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	version  = "1.0.1"
+	version  = "1.1.1"
 	appName  = "PrimeNumberGenerator"
 	appUsage = "Generate prime numbers forever"
 
@@ -73,7 +73,7 @@ func showHelp() {
 
 // showProgramDetails prints details about the program to STDOUT
 func showProgramDetails() {
-	fmt.Printf("PrimeNumberGenerator %s", version)
+	fmt.Printf("PrimeNumberGenerator %s LITE", version)
 	fmt.Println("\nCopyright (C) 2017 by Max Ungless")
 	fmt.Println("This program comes with ABSOLUTELY NO WARRANTY.\nThis is free software, and you are welcome to redistribute it\nunder the condiditions set in the GNU General Public License version 3.\nSee the file named LICENSE for details.")
 	fmt.Println("\nFor bugs, send mail to max@maxungless.com")
