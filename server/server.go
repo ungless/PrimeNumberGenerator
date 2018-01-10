@@ -47,7 +47,7 @@ func assignComputationHandler(w http.ResponseWriter, r *http.Request, c computat
 }
 
 func LaunchServer(c *app.Context) {
-	go fmt.Println("Launching server on port 8080...")
+	go fmt.Println("Launching server on port" + config.Port + "...")
 	numbersToCheck := make(chan *big.Int, 100)
 	validPrimes := make(chan primes.Prime, 100)
 	invalidPrimes := make(chan primes.Prime, 100)
@@ -96,7 +96,6 @@ func LaunchServer(c *app.Context) {
 			for _, c := range currentComputationsToPerform {
 				computationsToBeSent <- c
 			}
-			config.Logger.Print("PRIIIIIIIIIIIIIIIIIIIIIIIIME")
 		}
 	}()
 
@@ -119,5 +118,5 @@ func LaunchServer(c *app.Context) {
 		receiveComputationHandler(w, r, computationsReceived)
 	})
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":"+config.Port, nil)
 }
