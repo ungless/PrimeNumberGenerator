@@ -93,7 +93,12 @@ func LaunchClient(c *app.Context) {
 	go func() {
 		for p := range invalidPrimes {
 			primes.DisplayFailPretty(p.Value, p.TimeTaken)
-			sendPrimeResult(p)
+			err := sendPrimeResult(p)
+			for err != nil {
+				time.Sleep(1 * time.Second)
+				config.Logger.Print("Cannot send data back to server, trying again...")
+				err = sendPrimeResult(p)
+			}
 		}
 	}()
 
