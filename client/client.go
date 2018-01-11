@@ -15,9 +15,9 @@ import (
 	app "github.com/urfave/cli"
 )
 
-// sendComputationResult sends a JSON string through POST to the server
+// sendPrimeResult sends a JSON string through POST to the server
 // of the results of a computation
-func sendPrimeResult(p primes.Prime) {
+func sendPrimeResult(p primes.Prime) error {
 	url := "http://" + config.Address + config.ReturnPoint
 	json, err := json.Marshal(p)
 	if err != nil {
@@ -29,9 +29,10 @@ func sendPrimeResult(p primes.Prime) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		config.Logger.Fatal(err)
+		return err
 	}
 	defer resp.Body.Close()
+	return nil
 }
 
 // getUnMarshalledPrime produces a computation from a JSON string
@@ -80,7 +81,12 @@ func LaunchClient(c *app.Context) {
 	go func() {
 		for p := range validPrimes {
 			primes.DisplayPrimePretty(p.Value, p.TimeTaken)
-			sendPrimeResult(p)
+			err := sendPrimeResult(p)
+			for err != nil {
+				time.Sleep(1 * time.Second)
+				config.Logger.Print("Cannot send data back to server, trying again...")
+				err = sendPrimeResult(p)
+			}
 		}
 	}()
 
