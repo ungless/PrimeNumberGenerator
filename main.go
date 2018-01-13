@@ -47,6 +47,7 @@ func SetConfiguration() {
 	config.MaxFilesize = config.LocalConfig.MaxFilesize
 	config.MaxBufferSize = config.LocalConfig.MaxBufferSize
 	config.ShowFails = config.LocalConfig.ShowFails
+	config.Host = config.LocalConfig.ServerIP
 }
 
 // SetId sets the gloabl id variable

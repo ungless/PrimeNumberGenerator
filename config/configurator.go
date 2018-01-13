@@ -28,6 +28,7 @@ var (
 	defaultMaxFilesize   = 10000000
 	defaultMaxBufferSize = 300
 	defaultShowFails     = false
+	defaultServerIP      = "192.168.1.66"
 )
 
 type Config struct {
@@ -36,6 +37,7 @@ type Config struct {
 	MaxFilesize   int    `json:"maxfilesize"`
 	MaxBufferSize int    `json:"maxbuffersize"`
 	ShowFails     bool   `json:"showfails"`
+	ServerIP      string `json:"serverip"`
 }
 
 // GetUserHome returns the current user's home directory
@@ -80,13 +82,11 @@ func EnsureUserWantsNewConfig() {
 		Logger.Fatal(err)
 	}
 	choice = strings.Trim(choice, " \n")
-
 	if strings.ToLower(choice) == "y" {
 		RunConfigurator()
 	} else {
 		os.Exit(1)
 	}
-
 }
 
 // IsConfigured returns whether the program is configured already
@@ -107,8 +107,9 @@ func RunConfigurator() {
 	maxFilesize := getMaxFilesize()
 	maxBufferSize := getMaxBufferSize()
 	showFails := getShowFails()
+	serverIP := getServerIP()
 
-	generateConfig(base, startingPrime, maxFilesize, maxBufferSize, showFails)
+	generateConfig(base, startingPrime, maxFilesize, maxBufferSize, showFails, serverIP)
 	fmt.Println("Your configuration has now been generated.")
 }
 
@@ -140,7 +141,6 @@ func getStartingPrime() string {
 	if userChoice == "" {
 		userChoice = defaultStartingPrime
 	}
-
 	return userChoice
 }
 
@@ -204,23 +204,37 @@ func getShowFails() bool {
 	} else if strings.ToLower(userChoice) == "n" {
 		userChoiceBoolean = false
 	}
-
 	userChoice = strings.Trim(userChoice, " \n")
 	if userChoice == "" {
 		userChoiceBoolean = defaultShowFails
 	}
-
 	return userChoiceBoolean
 }
 
+// getserverIP returns the user's preference for the ip to
+// connect to as the server
+func getServerIP() string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Address to connect to as server (default: 192.168.1.66): ")
+	userChoice, err := reader.ReadString('\n')
+	if err != nil {
+		Logger.Fatal(err)
+	}
+	userChoice = strings.Trim(userChoice, " \n")
+	if userChoice == "" {
+		userChoice = defaultServerIP
+	}
+	return userChoice
+}
+
 // generateConfig concatinates the user's preferences into YAML format
-func generateConfig(base string, startingPrime string, maxFilesize int, maxBufferSize int, showFails bool) {
+func generateConfig(base string, startingPrime string, maxFilesize int, maxBufferSize int, showFails bool, serverIP string) {
 	config, err := os.Create(home + "/.primegenerator.yaml")
 	defer config.Close()
 	if err != nil {
 		Logger.Fatal(err)
 	}
-	c := Config{base, startingPrime, maxFilesize, maxBufferSize, showFails}
+	c := Config{base, startingPrime, maxFilesize, maxBufferSize, showFails, serverIP}
 	yaml, err := yaml.Marshal(c)
 	if err != nil {
 		Logger.Fatal(err)
