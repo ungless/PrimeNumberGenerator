@@ -53,7 +53,7 @@ func fetchNextPrimeToPerform() (primes.Prime, error) {
 		log.Print("Cannot connect to server")
 		return primes.Prime{}, err
 	}
-	config.Logger.Print("Received prime number from", url)
+	config.Logger.Print("Received prime number from ", url)
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	computation := getUnMarshalledPrime(string(body))
