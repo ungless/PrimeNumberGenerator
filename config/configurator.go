@@ -125,7 +125,6 @@ func getBaseDirectory() string {
 	if userChoice == "" {
 		userChoice = defaultBaseDirectory
 	}
-
 	return userChoice
 }
 
@@ -154,7 +153,6 @@ func getMaxFilesize() int {
 	if err != nil {
 		Logger.Fatal(err)
 	}
-
 	userChoiceString = strings.Trim(userChoiceString, " \n")
 	if userChoiceString == "" {
 		userChoice = defaultMaxFilesize
@@ -177,7 +175,6 @@ func getMaxBufferSize() int {
 	if err != nil {
 		Logger.Fatal(err)
 	}
-
 	userChoiceString = strings.Trim(userChoiceString, " \n")
 	if userChoiceString == "" {
 		userChoice = defaultMaxBufferSize
