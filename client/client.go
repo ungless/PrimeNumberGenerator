@@ -48,13 +48,12 @@ func getUnMarshalledPrime(body string) primes.Prime {
 // the server
 func fetchNextPrimeToPerform() (primes.Prime, error) {
 	url := "http://" + config.Address + config.AssignmentPoint
-	config.Logger.Print(url)
-	config.Logger.Print(config.Address)
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Print("Cannot connect to server")
 		return primes.Prime{}, err
 	}
+	config.Logger.Print("Received prime number from", url)
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	computation := getUnMarshalledPrime(string(body))
