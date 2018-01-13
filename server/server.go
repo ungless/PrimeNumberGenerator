@@ -49,7 +49,7 @@ func assignPrimeHandler(w http.ResponseWriter, r *http.Request, p primes.Prime) 
 
 // LaunchServer runs a server on the configured IP and port
 func LaunchServer(c *app.Context) {
-	go fmt.Println("Launching server on port 8080...")
+	go fmt.Printf("Launching server on port %s...\n", config.Port)
 	numbersToCheck := make(chan *big.Int)
 	validPrimes := make(chan primes.Prime, 100)
 	invalidPrimes := make(chan primes.Prime, 100)
