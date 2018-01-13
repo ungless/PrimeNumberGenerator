@@ -86,7 +86,6 @@ func showProgramDetails() {
 func getLastPrime() *big.Int {
 	latestFile := storage.OpenLatestFile(os.O_RDONLY, 0666)
 	defer latestFile.Close()
-
 	var lastPrimeGenerated string
 	scanner := bufio.NewScanner(latestFile)
 	for scanner.Scan() {

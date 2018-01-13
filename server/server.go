@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	//	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/config"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/primes"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/storage"
@@ -19,6 +18,7 @@ import (
 
 var lock sync.Mutex
 
+// receivePrimeHandler receives POST data from clients
 func receivePrimeHandler(w http.ResponseWriter, r *http.Request, primesReceived chan primes.Prime) {
 	lock.Lock()
 	defer lock.Unlock()
@@ -32,6 +32,7 @@ func receivePrimeHandler(w http.ResponseWriter, r *http.Request, primesReceived 
 	primesReceived <- p
 }
 
+// assignPrimeHandler returns the next prime needed to be calculated
 func assignPrimeHandler(w http.ResponseWriter, r *http.Request, p primes.Prime) {
 	ip, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
@@ -46,6 +47,7 @@ func assignPrimeHandler(w http.ResponseWriter, r *http.Request, p primes.Prime) 
 	fmt.Fprintf(w, "%s", json)
 }
 
+// LaunchServer runs a server on the configured IP and port
 func LaunchServer(c *app.Context) {
 	go fmt.Println("Launching server on port 8080...")
 	numbersToCheck := make(chan *big.Int)
@@ -71,7 +73,6 @@ func LaunchServer(c *app.Context) {
 				storage.FlushBufferToFile(primeBuffer)
 				primeBuffer = nil
 			}
-
 		}
 	}()
 

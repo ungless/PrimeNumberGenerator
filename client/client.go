@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	//	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/config"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/primes"
 	app "github.com/urfave/cli"

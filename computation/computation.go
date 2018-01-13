@@ -1,40 +1,13 @@
 package computation
 
 import (
-	"encoding/json"
 	"math/big"
 	"time"
 
 	"github.com/MaxTheMonster/PrimeNumberGenerator/config"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/primes"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/storage"
-	"github.com/satori/go.uuid"
 )
-
-type Computation struct {
-	Prime         primes.Prime
-	Divisor       *big.Int
-	IsValid       bool
-	TimeTaken     time.Duration
-	ComputationId *big.Int
-	Hash          uuid.UUID
-}
-
-func GetJSONFromComputation(c Computation) ([]byte, error) {
-	json, err := json.Marshal(c)
-	return json, err
-}
-
-func GenerateUUID() uuid.UUID {
-	u := uuid.NewV4()
-	return u
-}
-
-func getComputation(prime primes.Prime, divisor *big.Int, computationId *big.Int) Computation {
-	nextUUID := GenerateUUID()
-	computationStruct := Computation{prime, divisor, false, 0 * time.Second, computationId, nextUUID}
-	return computationStruct
-}
 
 // ComputePrimes computes primes concurrently until KeyboardInterrupt
 func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNumber *big.Int) {
@@ -96,40 +69,4 @@ func ComputePrimes(lastPrime *big.Int, writeToFile bool, toInfinity bool, maxNum
 			}
 		}(i)
 	}
-}
-
-// RunDistributedComputation calculates the modulus of a given Computation
-func RunDistributedComputation(c Computation) bool {
-	var computationIsValid bool
-	modulus := big.NewInt(0).Mod(c.Prime.Value, c.Divisor)
-	if modulus.Cmp(big.NewInt(0)) == 0 {
-		computationIsValid = true
-	} else {
-		computationIsValid = false
-	}
-	return computationIsValid
-}
-
-// getDivisorsOfPrime returns a slice containing all good divisors of a prime
-func getDivisorsOfPrime(i *big.Int) storage.BigIntSlice {
-	var divisorsOfPrime storage.BigIntSlice
-	squareRoot := big.NewInt(0).Sqrt(i)
-	for n := big.NewInt(3); n.Cmp(squareRoot) == -1; n.Add(n, big.NewInt(2)) {
-		divisor := new(big.Int).Set(n)
-		divisorsOfPrime = append(divisorsOfPrime, divisor)
-	}
-	return divisorsOfPrime
-}
-
-// GetComputationsToPerform passes all computations needed to be performed to a channel
-func GetComputationsToPerform(prime primes.Prime) []Computation {
-	var computations []Computation
-	divisors := getDivisorsOfPrime(prime.Value)
-	for i, v := range divisors {
-		computationId := big.NewInt(int64(i))
-		nextComputation := getComputation(prime, v, computationId)
-		config.Logger.Println(nextComputation)
-		computations = append(computations, nextComputation)
-	}
-	return computations
 }
