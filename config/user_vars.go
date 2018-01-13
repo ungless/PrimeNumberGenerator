@@ -20,7 +20,7 @@ var (
 	Host          string
 
 	Port            = "8080"
-	Address         = Host + ":" + Port
+	Address         string
 	AssignmentPoint = "/"
 	ReturnPoint     = "/finished"
 

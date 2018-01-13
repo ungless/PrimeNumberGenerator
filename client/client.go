@@ -48,6 +48,8 @@ func getUnMarshalledPrime(body string) primes.Prime {
 // the server
 func fetchNextPrimeToPerform() (primes.Prime, error) {
 	url := "http://" + config.Address + config.AssignmentPoint
+	config.Logger.Print(url)
+	config.Logger.Print(config.Address)
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Print("Cannot connect to server")
@@ -65,6 +67,7 @@ func LaunchClient(c *app.Context) {
 	primesToCompute := make(chan primes.Prime, 10)
 	validPrimes := make(chan primes.Prime, 10)
 	invalidPrimes := make(chan primes.Prime, 10)
+
 	go func() {
 		for {
 			nextPrime, err := fetchNextPrimeToPerform()
