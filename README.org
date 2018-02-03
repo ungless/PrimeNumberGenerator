@@ -1,4 +1,4 @@
-#+TITLE: Prime Number Generator (distributed branch WIP MAY BREAK)
+#+TITLE: Prime Number Generator
 
 This is a program that calculates primes concurrently using Go.
 
@@ -30,7 +30,7 @@ Go, I have seen, offers many advantages in this field including its concurrent a
    GIMPS is also non-free, being licensed by their own license. The code is open-source, however. This program is a free-software alternative (without any restrictions seen in https://www.mersenne.org/legal/).
 
 ** The Future
-   
+
    I have three key goals here:
    - To make a server variant for running nodes on the network
    - To make this distributed across said network

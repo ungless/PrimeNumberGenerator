@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	version  = "1.1.7"
+	version  = "1.2.7"
 	appName  = "PrimeNumberGenerator"
 	appUsage = "Generate prime numbers forever"
 
