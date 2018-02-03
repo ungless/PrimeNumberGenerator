@@ -2,7 +2,6 @@ package computation
 
 import (
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -22,42 +21,14 @@ type Computation struct {
 	Hash          uuid.UUID
 }
 
-type HeavyAssignment struct {
-	serverInformation string
-	computation       Computation
-}
-
-type Assignment struct {
-	serverInformation string
-	prime             primes.Prime
-}
-
-// CreateJSONFromComputation generates a JSON string from a given Computation
-func CreateJSONFromComputation(serverInformation []byte, c Computation) ([]byte, error) {
-	assignment := HeavyAssignment{serverInformation: string(serverInformation), computation: c}
-	computationJSON, err := json.Marshal(assignment)
-	fmt.Println(assignment)
-	fmt.Println(computationJSON)
-	return computationJSON, err
-}
-
-// CreateJSONFromPrime generates a JSON string from a given Prime
-func CreateJSONFromPrime(serverInformation []byte, p primes.Prime) ([]byte, error) {
-	assignment := Assignment{serverInformation: string(serverInformation), prime: p}
-	json, err := json.Marshal(assignment)
-	fmt.Println(assignment)
-	fmt.Println(json)
-	return json, err
-}
-
-// GetUnMarshalledResult produces a computation from a JSON string
-func GetUnMarshalledResult(body string) {
-	var a Assignment
-	err := json.Unmarshal([]byte(body), &a)
-	config.Logger.Print(a)
+// GetUnMarshalledPrime produces a computation from a JSON string
+func GetUnMarshalledPrime(body string) primes.Prime {
+	var c primes.Prime
+	err := json.Unmarshal([]byte(body), &c)
 	if err != nil {
 		config.Logger.Fatal(err)
 	}
+	return c
 }
 
 // GenerateUUID generates a new, random UUID (v4)

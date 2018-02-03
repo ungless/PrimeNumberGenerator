@@ -155,6 +155,12 @@ func main() {
 			Aliases: []string{"cl"},
 			Usage:   descClient,
 			Action:  client.LaunchClient,
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "heavy",
+					Usage: "Distribute individual divisions instead of distributing entire primes",
+				},
+			},
 		},
 		{
 			Name:    "server",
@@ -166,12 +172,6 @@ func main() {
 				return nil
 			},
 			Action: server.LaunchServer,
-			Flags: []cli.Flag{
-				cli.BoolFlag{
-					Name:  "heavy",
-					Usage: "Distribute individual divisions instead of distributing entire primes",
-				},
-			},
 		},
 	}
 	app.Run(os.Args)

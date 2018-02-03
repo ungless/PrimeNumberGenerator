@@ -19,10 +19,12 @@ var (
 	ShowFails     bool
 	Host          string
 
-	Port            = "8080"
-	Address         string
-	AssignmentPoint = "/"
-	ReturnPoint     = "/finished"
+	Port                 = "8080"
+	Address              string
+	AssignmentPoint      = "/"
+	ReturnPoint          = "/finished"
+	HeavyAssignmentPoint = "/heavy"
+	HeavyReturnPoint     = "/heavy/finished"
 
 	Id                 uint64
 	LastPrimeGenerated *big.Int
