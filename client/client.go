@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/config"
 	"github.com/MaxTheMonster/PrimeNumberGenerator/primes"
 	app "github.com/urfave/cli"
@@ -34,19 +35,9 @@ func sendPrimeResult(p primes.Prime) error {
 	return nil
 }
 
-// getUnMarshalledPrime produces a computation from a JSON string
-func getUnMarshalledPrime(body string) primes.Prime {
-	var c primes.Prime
-	err := json.Unmarshal([]byte(body), &c)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return c
-}
-
-// fetchNextPrimeToPerform returns a computation hash given by
+// fetchNextTaskToPerform returns a computation hash given by
 // the server
-func fetchNextPrimeToPerform() (primes.Prime, error) {
+func fetchNextTaskToPerform() (primes.Prime, error) {
 	url := "http://" + config.Address + config.AssignmentPoint
 	resp, err := http.Get(url)
 	if err != nil {
@@ -56,7 +47,8 @@ func fetchNextPrimeToPerform() (primes.Prime, error) {
 	config.Logger.Print("Received prime number from ", url)
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	computation := getUnMarshalledPrime(string(body))
+	computation := computation.GetUnMarshalledRe(string(body))
+	log.Print(computation)
 	return computation, nil
 }
 
@@ -69,7 +61,7 @@ func LaunchClient(c *app.Context) {
 
 	go func() {
 		for {
-			nextPrime, err := fetchNextPrimeToPerform()
+			nextPrime, err := fetchNextTaskToPerform()
 			if err != nil {
 				time.Sleep(1 * time.Second)
 				log.Print("Retrying connection")

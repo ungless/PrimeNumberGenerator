@@ -5,7 +5,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	//	"io/ioutil"
+	//      "io/ioutil"
 	"math/big"
 	"os"
 
@@ -101,7 +101,7 @@ func getLastPrime() *big.Int {
 }
 
 func init() {
-	//	config.Logger.SetOutput(ioutil.Discard)
+	//      config.Logger.SetOutput(ioutil.Discard)
 	showProgramDetails()
 	SetConfiguration()
 }
@@ -166,6 +166,12 @@ func main() {
 				return nil
 			},
 			Action: server.LaunchServer,
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "heavy",
+					Usage: "Distribute individual divisions instead of distributing entire primes",
+				},
+			},
 		},
 	}
 	app.Run(os.Args)
