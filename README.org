@@ -3,20 +3,20 @@
 This is a program that calculates primes concurrently using Go.
 
 * About
-  
+
 I've had several of these prime number generating programs since 2014 or so. All of the others were written in Python aside from an earlier version of this program (that I would classify as different) written in Go.
 
 Go, I have seen, offers many advantages in this field including its concurrent abilities and high efficiency garbage collection. Throughout the development of this program I have learned much about Go.
 
 ** Alternatives
-   
+
    I must stress, that there are other programs that do very similar things to this one including [[http://www.mersenne.org][Mprime and Prime95]], which are both part of the GIMPS project (same link). 
    GIMPS is an effort to discover Mersenne primes on a large scale internationally.
-   
+
    This project is different, being that the goal is to create a large collection of prime numbers, ranging from 2 until the very largest.
 
 ** GIMPS
-   
+
    GIMPS is nice. Their software is nice. But there is one particularly disturbing clause in their terms relating to cash prizes - specifically the Electronic Frontier Foundation prizes:
 
    #+BEGIN_QUOTE
