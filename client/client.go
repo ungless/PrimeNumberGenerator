@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/MaxTheMonster/PrimeNumberGenerator/computation"
@@ -15,15 +16,25 @@ import (
 	app "github.com/urfave/cli"
 )
 
+var lock sync.Mutex
+
 // sendPrimeResult sends a JSON string through POST to the server
 // of the results of a computation
 func sendPrimeResult(p primes.Prime) error {
+	lock.Lock()
+	defer lock.Unlock()
 	url := "http://" + config.Address + config.ReturnPoint
+	log.Print(url)
 	json, err := json.Marshal(p)
 	if err != nil {
-		config.Logger.Fatal(err)
+		config.Logger.Print(err)
 	}
+	log.Print("Sending ", string(json))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
+	if err != nil {
+		config.Logger.Print(err)
+		return err
+	}
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -46,8 +57,18 @@ func fetchNextPrimeToPerform() (primes.Prime, error) {
 	config.Logger.Print("Received prime number from ", url)
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	computation := computation.GetUnMarshalledPrime(string(body))
-	return computation, nil
+	prime := getUnMarshalledPrime(string(body))
+	return prime, nil
+}
+
+// getUnMarshalledPrime produces a computation from a JSON string
+func getUnMarshalledPrime(body string) primes.Prime {
+	var p primes.Prime
+	err := json.Unmarshal([]byte(body), &p)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return p
 }
 
 // sendComputationResult sends a JSON string through POST to the server
@@ -56,15 +77,14 @@ func sendComputationResult(c computation.Computation) {
 	url := "http://" + config.Address + config.HeavyReturnPoint
 	json, err := json.Marshal(c)
 	if err != nil {
-		config.Logger.Fatal(err)
+		config.Logger.Print(err)
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 	req.Header.Set("Content-Type", "application/json")
-
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		config.Logger.Fatal(err)
+		config.Logger.Print(err)
 	}
 	defer resp.Body.Close()
 }
@@ -185,12 +205,11 @@ func LaunchClient(c *app.Context) {
 
 		go func() {
 			for p := range validPrimes {
-				config.Logger.Println("VALID")
 				primes.DisplayPrimePretty(p.Value, p.TimeTaken)
 				err := sendPrimeResult(p)
 				for err != nil {
 					time.Sleep(1 * time.Second)
-					config.Logger.Print("Cannot send data back to server, trying again...")
+					log.Print("Cannot send data back to server, trying again...")
 					err = sendPrimeResult(p)
 				}
 			}
@@ -202,7 +221,7 @@ func LaunchClient(c *app.Context) {
 				err := sendPrimeResult(p)
 				for err != nil {
 					time.Sleep(1 * time.Second)
-					config.Logger.Print("Cannot send data back to server, trying again...")
+					log.Print("Cannot send data back to server, trying again...")
 					err = sendPrimeResult(p)
 				}
 			}
@@ -215,6 +234,7 @@ func LaunchClient(c *app.Context) {
 				p.IsValid = primes.CheckPrimality(i)
 				duration := time.Now().Sub(start)
 				p.TimeTaken = duration
+				log.Print(p)
 				if p.IsValid == true {
 					validPrimes <- p
 				} else {
