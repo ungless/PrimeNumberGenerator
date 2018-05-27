@@ -3,10 +3,13 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math/big"
 	"net/http"
+	"os"
+	"os/signal"
 	"sync"
 	"time"
 
@@ -118,6 +121,20 @@ func fetchNextComputationToPerform() (computation.Computation, error) {
 // goroutines
 func LaunchClient(c *app.Context) {
 	isHeavy := c.Bool("heavy")
+	sc := make(chan os.Signal, 1)
+	stemComputations := false
+	signal.Notify(sc, os.Interrupt)
+	go func() {
+		counter := 1
+		for sig := range sc {
+			stemComputations = true
+			if counter == 2 {
+				os.Exit(1)
+			}
+			fmt.Printf("\n\nCaptured %v, stemming acception of computations.. (Ctrl-C again to quit)\n\n", sig)
+			counter++
+		}
+	}()
 	if isHeavy {
 		computationsToPerform := make(chan computation.Computation, 10)
 		validComputations := make(chan computation.Computation, 10)
@@ -125,13 +142,15 @@ func LaunchClient(c *app.Context) {
 
 		go func() {
 			for {
-				nextComputation, err := fetchNextComputationToPerform()
-				if err != nil {
-					time.Sleep(1 * time.Second)
-					log.Print("Retrying connection")
-					continue
+				if stemComputations == false {
+					nextComputation, err := fetchNextComputationToPerform()
+					if err != nil {
+						time.Sleep(1 * time.Second)
+						log.Print("Retrying connection")
+						continue
+					}
+					computationsToPerform <- nextComputation
 				}
-				computationsToPerform <- nextComputation
 			}
 		}()
 
@@ -187,19 +206,21 @@ func LaunchClient(c *app.Context) {
 			}(i, c)
 		}
 	} else if !isHeavy {
-		primesToCompute := make(chan primes.Prime, 10)
-		validPrimes := make(chan primes.Prime, 10)
-		invalidPrimes := make(chan primes.Prime, 10)
+		primesToCompute := make(chan primes.Prime, 100)
+		validPrimes := make(chan primes.Prime, 100)
+		invalidPrimes := make(chan primes.Prime, 100)
 
 		go func() {
 			for {
-				nextPrime, err := fetchNextPrimeToPerform()
-				if err != nil {
-					time.Sleep(1 * time.Second)
-					log.Print("Retrying connection")
-					continue
+				if stemComputations == false {
+					nextPrime, err := fetchNextPrimeToPerform()
+					if err != nil {
+						time.Sleep(1 * time.Second)
+						log.Print("Retrying connection")
+						continue
+					}
+					primesToCompute <- nextPrime
 				}
-				primesToCompute <- nextPrime
 			}
 		}()
 
@@ -234,7 +255,6 @@ func LaunchClient(c *app.Context) {
 				p.IsValid = primes.CheckPrimality(i)
 				duration := time.Now().Sub(start)
 				p.TimeTaken = duration
-				log.Print(p)
 				if p.IsValid == true {
 					validPrimes <- p
 				} else {

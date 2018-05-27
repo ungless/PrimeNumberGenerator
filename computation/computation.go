@@ -40,7 +40,7 @@ func GenerateUUID() uuid.UUID {
 // getComputation produces a Computation struct given its values
 func getComputation(prime primes.Prime, divisor *big.Int, computationId *big.Int) Computation {
 	nextUUID := GenerateUUID()
-	computationStruct := Computation{prime, divisor, false, 0 * time.Second, computationId, nextUUID}
+	computationStruct := Computation{prime, divisor, prime.IsValid, 0 * time.Second, computationId, nextUUID}
 	return computationStruct
 }
 
