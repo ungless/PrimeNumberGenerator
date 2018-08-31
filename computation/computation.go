@@ -33,7 +33,10 @@ func GetUnMarshalledPrime(body string) primes.Prime {
 
 // GenerateUUID generates a new, random UUID (v4)
 func GenerateUUID() uuid.UUID {
-	u := uuid.NewV4()
+	u, err := uuid.NewV4()
+	if err != nil {
+		config.Logger.Fatal(err)
+	}
 	return u
 }
 
